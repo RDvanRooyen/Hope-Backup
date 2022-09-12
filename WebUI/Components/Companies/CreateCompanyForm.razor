@@ -1,0 +1,196 @@
+﻿@using System.IO
+@using WebUI.Factory
+
+@inject ServiceFactory _factory
+@inject IMatToaster _toaster
+@inject NavigationManager _navigationManager
+@inject AuthenticationStateProvider _authenticationStateProvider
+@typeparam TService
+
+<EditForm Model="@Company" OnValidSubmit="@Submit">
+    <ObjectGraphDataAnnotationsValidator  />
+
+    
+    <h3>Company Profile</h3>
+
+    <div class="form-group row">
+        <label for="companyName" class="col-sm-2 col-form-label" >Company Name</label>
+        <div class="col-sm-10">
+            <InputText type="text" class="form-control" id="companyName" @bind-Value="@Company.CompanyName"></InputText>
+            <ValidationMessage For="@(() => @Company.CompanyName)" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="CompanyAddressLine1" class="col-sm-2 col-form-label">Address</label>
+        <div class="col-sm-10">
+            <InputText type="text" class="form-control" id="CompanyAddressLine1" @bind-Value="@Company.CompanyAddress.CompanyAddressLine1"></InputText>
+        <ValidationMessage For="@(() => @Company.CompanyAddress.CompanyAddressLine1)" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="companyCity" class="col-sm-2 col-form-label">City</label>
+        <div class="col-sm-10">
+            <InputText type="text" class="form-control" id="companyCity" @bind-Value="@Company.CompanyAddress.CompanyCity"></InputText>
+        <ValidationMessage For="@(() => @Company.CompanyAddress.CompanyCity)" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="companyState" class="col-sm-2 col-form-label">State</label>
+        <div class="col-sm-10">
+            <InputText type="text" class="form-control" id="companyState" @bind-Value="@Company.CompanyAddress.CompanyState"></InputText>
+        <ValidationMessage For="@(() => @Company.CompanyAddress.CompanyState)" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="companyZipCode" class="col-sm-2 col-form-label">Zip Code</label>
+        <div class="col-sm-10">
+            <InputText type="text" class="form-control" id="companyZipCode" @bind-Value="@Company.CompanyAddress.CompanyZipCode"></InputText>
+        <ValidationMessage For="@(() => @Company.CompanyAddress.CompanyZipCode)" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="companyPhoneNo" class="col-sm-2 col-form-label">Phone Number</label>
+        <div class="col-sm-10">
+            <InputText type="text" class="form-control" id="companyPhoneNo" @bind-Value="@Company.CompanyPhoneNo"></InputText>
+        <ValidationMessage For="@(() => @Company.CompanyPhoneNo)" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="companyReportEmail" class="col-sm-2 col-form-label">Report Email</label>
+        <div class="col-sm-10">
+            <InputText type="text" class="form-control" id="companyReportEmail" @bind-Value="@Company.CompanyReportEmail"></InputText>
+        <ValidationMessage For="@(() => @Company.CompanyReportEmail)" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="companySenderEmail" class="col-sm-2 col-form-label">Sender Email</label>
+        <div class="col-sm-10">
+            <InputText type="text" class="form-control" id="companySenderEmail" @bind-Value="@Company.CompanySenderEmail"></InputText>
+        <ValidationMessage For="@(() => @Company.CompanySenderEmail)" />
+        </div>
+    </div>
+
+
+
+
+    <div class="form-group file">
+        <label for="companyLogoImage" class="col-sm-2 col-form-label">Logo Image</label>
+        <div class="col-sm-10">
+            <img src="data:image/png;base64, @(Company.CompanyLogoImage)" width="300" height="300" class="img-fluid" alt="Company Logo">
+        <ValidationMessage For="@(() => @Company.CompanyLogoImage)" />
+        </div>
+    </div>
+
+    <div class="form-group file">
+        <label for="companyUploadLogo" class="col-sm-2 col-form-label">Upload Logo</label>
+        <div class="col-sm-10">
+            <InputFile OnChange="UploadLogo"></InputFile>
+        <ValidationMessage For="@(() => @Company.CompanyLogoImage)" />
+        </div>
+    </div>
+
+
+
+
+    <div class="form-group file">
+        <label for="companyFaviconImage" class="col-sm-2 col-form-label">Favicon Image</label>
+        <div class="col-sm-10">
+            <img src="data:image/png;base64, @(Company.CompanyFavicon)" width="100" height="100" class="img-fluid" alt="Company Favicon">
+        <ValidationMessage For="@(() => @Company.CompanyFavicon)" />
+        </div>
+    </div>
+
+    <div class="form-group file">
+        <label for="companyUploadFavicon" class="col-sm-2 col-form-label">Upload Favicon</label>
+        <div class="col-sm-10">
+            <InputFile OnChange="UploadFavicon"></InputFile>
+        <ValidationMessage For="@(() => @Company.CompanyFavicon)" />
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+
+</EditForm>
+
+@code {
+
+    [Parameter]
+    public Func<Company, bool> OnBeforeSave { get; set; }
+
+    [Parameter]
+    public Func<Company, bool> OnAfterSave { get; set; }
+
+    Company Company { get; set; } = new Company();
+
+    TService Service { get; set; }
+
+    byte[] image { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        Service = Service ?? await _factory.CreateService<TService>(_authenticationStateProvider);
+        var company = Service.GetQueryable<Company>(false,false).FirstOrDefault();
+        if(company != null)
+        {
+            Company = company;
+        }
+    }
+
+    void Submit()
+    {
+
+        bool okToSave = OnBeforeSave?.Invoke(Company) ?? true;
+
+        if (!okToSave) return;
+
+        var context = Service.GetContext();
+        bool companyExist = context.Companies.Any();
+
+        if (!companyExist)
+        {
+            var saveResult = Service.Save(Company, x => x.CompanyId);
+            if (saveResult < 1)
+            {
+                _toaster.Add($"Company could not be saved", MatToastType.Danger);
+            }
+            else
+            {
+                _toaster.Add($"{Company.CompanyName} saved successfully", MatToastType.Success);
+                OnAfterSave?.Invoke(Company);
+            }
+        }
+        else
+        {
+            context.Companies.Update(Company);
+            var saveResult = context.SaveChanges();
+            if (saveResult < 1)
+            {
+                _toaster.Add($"Company could not be updated", MatToastType.Danger);
+            }
+            else
+            {
+                _toaster.Add($"{Company.CompanyName} updated successfully", MatToastType.Success);
+                OnAfterSave?.Invoke(Company);
+            }
+        }
+    }
+
+    async Task UploadLogo(InputFileChangeEventArgs e)
+    {
+        using MemoryStream fs = new MemoryStream();
+        await e.File.OpenReadStream().CopyToAsync(fs);
+        var x = fs.ToArray();
+        string s = Convert.ToBase64String(x);
+        Company.CompanyLogoImage = s;
+        StateHasChanged();
+    }
+
+    async Task UploadFavicon(InputFileChangeEventArgs e)
+    {
+        using MemoryStream fs = new MemoryStream();
+        await e.File.OpenReadStream().CopyToAsync(fs);
+        var x = fs.ToArray();
+        string s = Convert.ToBase64String(x);
+        Company.CompanyFavicon = s;
+        StateHasChanged();
+    }
+}

@@ -1,0 +1,13 @@
+﻿@page "/list/cplconnection"
+@using WebUI.Components
+@using WebUI.Services
+
+<ManagementListPage TItem="CPLConnection"
+                    TService="ServiceBase"
+                    Title="Culture/Place/Local Connections"
+                    IdField="@(x => x.Id)"
+                    NameField="@(x => x.Title)"
+                    ManagePath="cplconnection">                
+                    
+</ManagementListPage>
+

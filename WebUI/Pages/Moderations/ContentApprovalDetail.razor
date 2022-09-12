@@ -1,0 +1,513 @@
+﻿@page "/moderation/content/{ContentDetailId:int}"
+@using System
+@using System.IO
+@using Microsoft.AspNetCore.Hosting
+@using Microsoft.Extensions.Logging
+@using Newtonsoft.Json
+@using System.Drawing
+@using WebUI.Components
+@using WebUI.Services
+@using WebUI.Data.Models
+@using WebUI.Factory
+@using WebUI.Data
+@using System.Threading
+@using Blazored.Typeahead
+
+@inject AuthenticationStateProvider _authenticationStateProvider
+@inject ServiceFactory _factory
+@inject IMatToaster _toaster
+@inject IWebHostEnvironment Environment
+@inject System.Net.Http.HttpClient HttpClient
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject NavigationManager NavManager
+
+
+
+
+<div class="row">
+    <div class="p-2 col-12">
+        <h3>Content Approval Detail</h3>
+        <a href="/moderation/contents">&lt; Back to list</a>
+    </div>
+    <div class="p-2 col-12">
+        <div class="btn-group" role="group" aria-label="Basic example">
+            <button type="button" class="btn @(Step == 1 ? "btn-info" : "btn-outline-info")" @onclick="async () => { PerformStep(1); }">
+                Content Background <span class="badge badge-dark">1</span>
+            </button>
+            <button type="button" class="btn @(Step == 2 ? "btn-info" : "btn-outline-info")" @onclick="async () => { PerformStep(2); }">
+                Content Description <span class="badge badge-dark">2</span>
+            </button>
+            <button type="button" class="btn @(Step == 3 ? "btn-info" : "btn-outline-info")" @onclick="async () => { PerformStep(3); }">
+                Content References <span class="badge badge-dark">3</span>
+            </button>
+            <button type="button" class="btn @(Step == 4 ? "btn-info" : "btn-outline-info")" @onclick="async () => { PerformStep(4); }">
+                Content Outline <span class="badge badge-dark">4</span>
+            </button>
+            <button type="button" class="btn @(Step == 5 ? "btn-info" : "btn-outline-info")" @onclick="async () => { PerformStep(5); }">
+                Content Attachments <span class="badge badge-dark">5</span>
+            </button>
+        </div>
+    </div>
+</div>
+<div class="row">
+    @if (Step == 1)
+    {
+        <div class="p-2 col-8">
+            <div class="form-group">
+                <label>
+                    Author
+                </label>
+                <div class="p-3 border bg-readonly ">
+                    @_contentDetails.CreatedBy?.FirstName @_contentDetails.CreatedBy?.LastName
+                </div>
+            </div>
+            <div class="form-group">
+                <label>
+                    Title
+                </label>
+                <div class="p-3 border bg-readonly ">
+                    @((MarkupString)_contentDetails.Title)
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Summary </label>
+                <div class="p-3 border bg-readonly ">
+                    @((MarkupString)_contentDetails.Summary)
+                </div>
+            </div>
+            <div class="form-group">
+                <label>
+                    Co-author
+                </label>
+                <div class="">
+                    @foreach (var g in _contentDetails.CoAuthors)
+                    {
+                        <span class="badge badge-pill badge-secondary mr-1 px-3 py-2">@g.Author.FullName</span>
+                    }
+                </div>
+            </div>
+            <div class="form-group">
+                <label>
+                    Derivation
+                </label>
+                @foreach (var d in _contentDetails.Derivations)
+                {
+                    <a class="d-block" href="content/view/@d.DerivationId">@d.ContentDetails.Title</a>
+                }
+                @foreach (var d in _contentDetails.ContentExternalLinks)
+                {
+                    <a class="d-block" href="@d.ExternalLink">@d.ExternalLink</a>
+                }
+            </div>
+            <div class="form-group">
+                <label>Photos </label>
+                <div class="d-flex flex-row bd-highlight mb-3">
+                    @foreach (var photo in _contentDetails.ContentFiles.Where(x => x.Category == ContentFiles.PhotoContentFileCategory))
+                    {
+                        <div class="p-2 bd-highlight">
+                            <img style="height: 100px;"
+                                 src="@WebUI.Helpers.ImageTool.ImagePathToBase64(System.IO.Path.Combine(Configuration["AppSettings:BaseDirectory"], photo.RelativePath).Replace(@"\",@"/").ToString())"
+                                 alt="@photo.RelativePath" />
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Open Education Licensing Addressed </label>
+
+                <div class="p-3 border bg-readonly ">
+                    @((MarkupString)_contentDetails.OpenEduLicAddString)
+                </div>
+            </div>
+        </div>
+
+    }
+    @if (Step == 2)
+    {
+<div class="p-2 col-8">
+    <div class="form-group">
+        <label>
+            Grade
+        </label>
+        <div class="">
+            @foreach (var g in _contentDetails.ContentGrades)
+            {
+                <span class="badge badge-pill badge-secondary mr-1 px-3 py-2">@g.Grade?.Title</span>
+            }
+        </div>
+    </div>
+    <div class="form-group">
+        <label>
+            Subjects
+        </label>
+        <div class="">
+            @foreach (var g in _contentDetails.ContentSubjects)
+            {
+                <span class="badge badge-pill badge-secondary mr-1 px-3 py-2">@g.Subject.Title</span>
+            }
+        </div>
+    </div>
+    @*<div class="form-group">
+        <label>Topics</label>
+        <div class="">
+            @foreach (var g in _contentDetails.ContentTopics)
+            {
+                <span class="badge badge-pill badge-secondary mr-1 px-3 py-2">@g.Topic.Title</span>
+            }
+        </div>
+    </div>*@
+    <div class="form-group">
+        <label>Topics</label>
+        @if (SelectedTopics == null || !SelectedTopics.Any())
+        {
+            <small class="form-text text-danger float-right">Required Field</small>
+        }
+        <BlazoredTypeahead SearchMethod="SearchTopic"
+                           @bind-Values="SelectedTopics"
+                           EnableDropDown="true"
+                           ShowDropDownOnFocus="true" 
+                           placeholder="type here to search">
+            <SelectedTemplate Context="t">
+                @{
+                        if (t.Approved)
+                        {
+                        <span>@t.Title</span>
+                        }
+                        else
+                        {
+                        <span class="text-danger" style="font-weight: bold; font-style: italic;" title="New topic. Not yet approved!">@t.Title</span>
+                        }
+                }
+
+            </SelectedTemplate>
+            <HelpTemplate>
+                Please enter a minimum of 2 characters to perform a search.
+            </HelpTemplate>
+            <NotFoundTemplate Context="searchText">
+                Add "@searchText" as a new topic <br />
+                The newly added topic will be selected after being added.
+            </NotFoundTemplate>
+            <ResultTemplate Context="t">
+                @t.Title
+            </ResultTemplate>
+        </BlazoredTypeahead>
+    </div>
+    <div class="form-group">
+        <label>
+            Essential Question
+        </label>
+        <div class="p-3 border bg-readonly ">
+            @((MarkupString)_contentDetails.EssentialQuestion)
+        </div>
+    </div>
+    <div class="form-group">
+        <label>
+            Purpose/Objective
+        </label>
+        <div class="p-3 border bg-readonly ">
+            @((MarkupString)_contentDetails.Objective)
+        </div>
+    </div>
+    <div class="form-group">
+        <label>
+            Connection to Hawai'i'
+        </label>
+        <div class="p-3 border bg-readonly ">
+            @((MarkupString)_contentDetails.ConnectionToHawaii)
+        </div>
+    </div>
+    <div class="form-group">
+        <label>Place Name</label>
+        <div class="p-3 border bg-readonly ">
+            @((MarkupString)_contentDetails.PlaceName)
+        </div>
+    </div>
+    <div class="form-group">
+        <label>Duration</label>
+        <div class="p-3 border bg-readonly ">
+            @_contentDetails.Duration
+        </div>
+    </div>
+</div>
+    }
+    @if (Step == 3)
+    {
+        <div class="p-2 col-8">
+            <div class="form-group">
+                <label>
+                    Materials Text
+                </label>
+                <div class="p-3 border bg-readonly ">
+                    @((MarkupString)_contentDetails.MaterialsText)
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Materials Uploads </label>
+                <div class="p-3 border bg-readonly ">
+                    @foreach (var f in _contentDetails.ContentFiles.Where(x => x.Category == ContentFiles.MaterialContentFileCategory))
+                    {
+                        <a class="d-block" href="@(GetDownloadLink(Configuration["AppSettings:BaseDirectory"],f.RelativePath))">@f.FilenameFromPath</a>
+                    }
+                </div>
+            </div>
+            <div class="form-group">
+                <label>
+                    Resources Text
+                </label>
+                <div class="p-3 border bg-readonly ">
+                    @((MarkupString)_contentDetails.ResourcesText)
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Resources Uploads </label>
+                <div class="p-3 border bg-readonly ">
+                    @foreach (var f in _contentDetails.ContentFiles.Where(x => x.Category == ContentFiles.ResourceContentFileCategory))
+                    {
+                        <a class="d-block" href="@(GetDownloadLink(Configuration["AppSettings:BaseDirectory"],f.RelativePath))">@f.FilenameFromPath</a>
+                    }
+                </div>
+            </div>
+            <div class="form-group">
+                <label>
+                    Community Connections & Partnerships Text
+                </label>
+                <div class="p-3 border bg-readonly ">
+                    @((MarkupString)_contentDetails.ConnectionText)
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Community Connections & Partnerships Uploads </label>
+                <div class="p-3 border bg-readonly ">
+                    @foreach (var f in _contentDetails.ContentFiles.Where(x => x.Category == ContentFiles.CommunityContentFileCategory))
+                    {
+                        <a class="d-block" href="@(GetDownloadLink(Configuration["AppSettings:BaseDirectory"],f.RelativePath))">@f.FilenameFromPath</a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    @if (Step == 4)
+    {
+        <div class="p-2 col-8">
+            <div class="form-group">
+                <label>Standards</label>
+                <div class="">
+                    @foreach (var g in _contentDetails.ContentStandards)
+                    {
+                        <span class="badge badge-pill badge-secondary mr-1 px-3 py-2">@g.Standard.Title</span>
+                    }
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    Formative Assessments
+                </label>
+                <div class="p-3 border bg-readonly ">
+                    @((MarkupString)_contentDetails.FormativeAssessments)
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Formative Assessments Uploads </label>
+                <div class="p-3 border bg-readonly ">
+                    @foreach (var f in _contentDetails.ContentFiles.Where(x => x.Category == ContentFiles.FormativeContentFileCategory))
+                    {
+                        <a class="d-block" href="@(GetDownloadLink(Configuration["AppSettings:BaseDirectory"],f.RelativePath))">@f.FilenameFromPath</a>
+                    }
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    Summative Assessments and Major Milestones
+                </label>
+                <div class="p-3 border bg-readonly ">
+                    @((MarkupString)_contentDetails.SummativeAssessments)
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Summative Assessments and Major Milestones Uploads </label>
+                <div class="p-3 border bg-readonly ">
+                    @foreach (var f in _contentDetails.ContentFiles.Where(x => x.Category == ContentFiles.SummativeContentFileCategory))
+                    {
+                        <a class="d-block" href="@(GetDownloadLink(Configuration["AppSettings:BaseDirectory"],f.RelativePath))">@f.FilenameFromPath</a>
+                    }
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    Final Product/Performance
+                </label>
+                <div class="p-3 border bg-readonly ">
+                    @((MarkupString)_contentDetails.FinalProduct)
+                </div>
+            </div>
+        </div>
+    }
+    @if (Step == 5)
+    {
+        <div class="p-2 col-8">
+            <div class="form-group">
+                <label>Pacing Guide </label>
+                <div class="p-3 border bg-readonly ">
+                    @foreach (var f in _contentDetails.ContentFiles.Where(x => x.Category == ContentFiles.PacingContentFileCategory))
+                    {
+                        <a class="d-block" href="@(GetDownloadLink(Configuration["AppSettings:BaseDirectory"],f.RelativePath))">@f.FilenameFromPath</a>
+                    }
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Student Work Examples (Artifacts) </label>
+                <div class="p-3 border bg-readonly ">
+                    @foreach (var f in _contentDetails.ContentFiles.Where(x => x.Category == ContentFiles.StudentWorkContentFileCategory))
+                    {
+                        <a class="d-block" href="@(GetDownloadLink(Configuration["AppSettings:BaseDirectory"],f.RelativePath))">@f.FilenameFromPath</a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (Step == 6)
+    {
+        <div class="m-4 col-xl-12">
+            <h1>Content Approval Detail Confirmation</h1>
+            <p>
+                The content you were reviewing has been approved by you.  <a href="/content/view/@ContentDetailId">View Live Content</a>.
+
+            </p>
+            <p>
+                Return to the Content Approval List <a href="/moderation/contents">Content Approval List</a>.
+            </p>
+        </div>
+    }
+
+</div>
+<hr />
+@if (Step != 6)
+{
+
+
+    <div class="row">
+        <div class="col-6">
+            <div class="form-group">
+                <label>Comments for Submitter</label>
+                <textarea class="form-control" rows="3" placeholder="Ask the author a question" @bind="_commentForSubmitter"></textarea>
+            </div>
+            <button type="submit" class="btn btn-outline-info btn-sm" @onclick="AddCommentForSubmiter">Submit</button>
+            <hr />
+            <div class="border p-2" style="font-size: 0.9em;">
+                @foreach (var c in CommentsForSubmitter)
+                {
+
+                    <div class="d-block mb-2">
+                        <button class="btn btn-sm btn-danger" @onclick="@(()=> { DeleteCommment(c); })">Delete</button>
+                        <strong>@c.CommentDate.ToHumanDateTime()</strong>
+                        <strong>@c.Moderator.FullName</strong>
+                        <br />
+                        <span>@c.Comment</span>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="form-group">
+                <label>Internal Comments</label>
+                <textarea class="form-control" rows="3" placeholder="Ask the author a question" @bind="_commentInternal"></textarea>
+            </div>
+            <button type="submit" class="btn btn-outline-info btn-sm" @onclick="AddInternalComment">Submit</button>
+            <hr />
+            <div class="border p-2" style="font-size: 0.9em;">
+                @foreach (var c in InternalComments)
+                {
+
+                    <div class="d-block mb-2">
+                        <button class="btn btn-sm btn-danger" @onclick="@(()=> { DeleteCommment(c); })">Delete</button>
+                        <strong>@c.CommentDate.ToHumanDateTime()</strong>
+                        <strong>@c.Moderator.FullName</strong>
+                        <br />
+                        <span>@c.Comment</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+<div class="d-flex flex-row bd-highlight mx-4 mb-5">
+    <div class="p-2 bd-highlight">
+
+        <button type="submit" class="btn btn-sm btn-outline-info" disabled="@(Step==1)" @onclick="async()=> { PerformStepPrevious(); }">Previous</button>
+        <button type="submit" class="btn btn-sm btn-outline-info" disabled="@(Step==5)" @onclick="async()=> { PerformStepNext(); }">Next</button>
+    </div>
+    <div class="p-2 bd-highlight">
+
+        <button type="submit" disabled="@_isSaving" class="btn btn-sm btn-danger" @onclick="Reject">Reject</button>
+        <button type="submit" disabled="@_isSaving" class="btn btn-sm btn-success" @onclick="Approve">Approve</button>
+    </div>
+    <div class="p-2 bd-highlight">
+        <a href="/moderation/contents" class="btn btn-sm btn-outline-danger">Cancel</a>
+    </div>
+</div>
+
+@if (_showReject)
+{
+
+    <div class="modal fade show" style="display:block; z-index: 2000;" aria-modal="true" role="dialog">
+        <div class="modal-dialog " @onclick:stopPropagation="true">
+
+            <div class="modal-content">
+                <div class="modal-header">Reject Reason</div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Provide your reason</label>
+                        <textarea class="form-control" rows="3" placeholder="Ask the author a question" @bind="_rejectReason"></textarea>
+                    </div>
+
+                </div>
+
+                <!-- Modal footer -->
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary btn-sm p-1 m-1" type="button" @onclick="@(async ()=>{ _showReject=false; SubmitReject(); })">Submit</button>
+                    <button class="btn btn-outline-secondary btn-sm p-1 m-1" type="button" @onclick="@(()=>{ _showReject=false; })">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="modal-backdrop fade show" style="z-index: 1999;"></div>
+
+
+}
+
+
+@if (_showDeleteConfirm)
+{
+
+    <div class="modal fade show" style="display:block; z-index: 2000;" aria-modal="true" role="dialog">
+        <div class="modal-dialog " @onclick:stopPropagation="true">
+
+            <div class="modal-content">
+                <div class="modal-header">Delete Confirmation</div>
+                <div class="modal-body">
+                    Delete this item?
+                </div>
+
+                <!-- Modal footer -->
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary btn-sm p-1 m-1" type="button" @onclick="@(()=>{ _showDeleteConfirm=false; ConfirmDeleteComment(); })">Yes</button>
+                    <button class="btn btn-outline-secondary btn-sm p-1 m-1" type="button" @onclick="@(()=>{ _showDeleteConfirm=false; })">No</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="modal-backdrop fade show" style="z-index: 1999;"></div>
+
+
+}

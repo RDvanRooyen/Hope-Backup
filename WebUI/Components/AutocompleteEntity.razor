@@ -1,0 +1,40 @@
+﻿@typeparam TItem
+
+@using WebUI.ViewModels
+@using WebUI.Components.Abstract
+@using WebUI.Factory
+@using WebUI.Data.Interfaces;
+
+@inject ServiceFactory _factory
+@inject AuthenticationStateProvider _authenticationStateProvider
+
+@inherits CustomSelectorBase<TItem, ISelectOption<int>, int?>
+
+<QuickAutocomplete placeholder="@GetPlaceHolderText()"
+                   disabled="@(IsRefreshing || Disabled)"
+                   TItem="ISelectOption<int>"
+                   Data="@_options"
+                   TextField="@nameof(ISelectOption<int>.DisplayName)"
+                   Value="@_selectedOption"
+                   ValueChanged="@SelectedOptionChanged"
+                   MaxItemsHeight="315px"
+                   MaxItemsToShow="500"
+                   Width="@Width"
+                   Class="@Class"
+                   ContainerClass="@ContainerClass"
+                   AllowCustomValues="@AllowCustomValues"
+                   ChooseItemOnBlur="true" 
+                   ShowClearButton="@(!IsRefreshing && !Disabled)">
+
+    <ItemTemplate>
+        @if (ItemTemplate == null)
+        {
+            @context.DataObject.DisplayName
+        }
+        else
+        {
+            @ItemTemplate(context.DataObject)
+        }
+    </ItemTemplate>
+
+</QuickAutocomplete>

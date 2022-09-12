@@ -1,0 +1,47 @@
+﻿@page "/manage/subject/{SubjectId:int}"
+@using System.IO
+@using WebUI.Components
+@using WebUI.Services
+@using WebUI.Data.Enums
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using WebUI.Factory
+@using WebUI.Pages
+
+@attribute [Authorize(Roles = "SuperAdmin,Admin,User")]
+
+<AuthorizeView Roles="SuperAdmin,Admin,User">
+    <Authorized Context="authContext">
+        @*the "Query" Parameter is included so that the LastModifiedBadge component is populated correctly*@
+        <ManagementPage TItem="Subject"
+                        TService="ServiceBase"
+                        Title="Subjects"
+                        IdField="@(x => x.Id)"
+                        IdFieldFilter="@(x => x.Id == SubjectId)"
+                        ReturnPath="/list/subject">
+            <EditFields>
+                <div class="form-group row">
+                    <label for="SubjectTitle" class="col-sm-2 col-form-label">Subject*</label>
+                    <div class="col-sm-10">
+                        <InputText type="text" class="form-control" id="subjectTitle" @bind-Value="@context.Title"></InputText>
+                    </div>
+                </div>
+             </EditFields>
+        </ManagementPage>
+    </Authorized>
+</AuthorizeView>
+
+@code{
+    [CascadingParameter(Name = "MainLayout")]
+    public MainLayout MainLayout { get; set; }
+
+    [Parameter]
+    public int SubjectId { get; set; }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {        
+        // the AuthorizedFluidContainer component inside ManagementPage tries to hide the progress bar
+        // but doesn't do a good job for this page, probably because it's so simple and loads in one render
+        // so explicitly hide the progress bar after render
+        MainLayout.HideProgressBar();
+    }
+}

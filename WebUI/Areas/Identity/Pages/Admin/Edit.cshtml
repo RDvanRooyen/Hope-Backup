@@ -1,0 +1,206 @@
+﻿@page "{userId}"
+@using WebUI.Data.Enums
+@using WebUI.Data.Models
+@model WebUI.Areas.Identity.Pages.Admin.EditModel
+
+
+@{
+    ViewData["Title"] = "Edit User";
+    //ViewData["ActivePage"] = ManageNavPages.ChangePassword;
+}
+
+<h3>@ViewData["Title"]</h3>
+<a href="/Identity/Admin/">Return to List</a>
+<hr />
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+@**    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">*@
+<!-- JS & CSS library of MultiSelect plugin -->
+<script src="https://phpcoder.tech/multiselect/js/jquery.multiselect.js"></script>
+<link rel="stylesheet" href="https://phpcoder.tech/multiselect/css/jquery.multiselect.css">
+
+<style>
+    ul {
+        list-style-type: none;
+        padding-left: 0px;
+    }
+</style>
+
+<div class="row ">
+    <div class="col-md-6 mb-4 ">
+        <h4>Update User Profile</h4>
+        <partial name="_StatusMessage" for="FirstNameStatusMessage" />
+        <partial name="_StatusMessage" for="LastNameStatusMessage" />
+        <partial name="_StatusMessage" for="GradeIdStatusMessage" />
+        <partial name="_StatusMessage" for="SubjectIdStatusMessage" />
+        <partial name="_StatusMessage" for="SchoolStatusMessage" />
+        <div class="row">
+            <div class="col-md-10">
+                <form id="change-profile-form" method="post">
+                    <div class="form-group">
+                        <label asp-for="Input.FirstName"></label>
+                        <input asp-for="Input.FirstName" class="form-control" />
+                        <span asp-validation-for="Input.FirstName" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Input.LastName"></label>
+                        <input asp-for="Input.LastName" class="form-control" />
+                        <span asp-validation-for="Input.LastName" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="SelectedGrades"></label>
+                        <select name="SelectedGrades[]" asp-for="SelectedGrades" asp-items="Model.GradesList" class="form-control" multiple>
+                        </select>
+                        <span asp-validation-for="SelectedGrades" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="SelectedSubjects"></label>
+                        <select name="SelectedSubjects[]" asp-for="SelectedSubjects" asp-items="Model.SubjectsList" class="form-control" multiple>
+                        </select>
+                        <span asp-validation-for="SelectedSubjects" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Input.School"></label>
+                        <input asp-for="Input.School" class="form-control" />
+                        <span asp-validation-for="Input.School" class="text-danger"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update User Profile</button>
+                </form>
+            </div>
+        </div>
+        <div class="mt-2 pt-2">
+            <a href="/Identity/Admin/">Return to List</a>
+        </div>
+    </div>
+
+    @*password section*@
+    <div class="col-md-6 mb-4 ">
+        <h4>Change Password</h4>
+        <partial name="_StatusMessage" for="PasswordStatusMessage" />
+        <div class="row">
+            <div class="col-md-10">
+                <form id="change-password-form" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div class="form-group">
+                        <label asp-for="Input.OldPassword"></label>
+                        <input asp-for="Input.OldPassword" class="form-control" />
+                        <span asp-validation-for="Input.OldPassword" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Input.NewPassword"></label>
+                        <input asp-for="Input.NewPassword" class="form-control" />
+                        <span asp-validation-for="Input.NewPassword" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Input.ConfirmPassword"></label>
+                        <input asp-for="Input.ConfirmPassword" class="form-control" />
+                        <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update password</button>
+                </form>
+            </div>
+        </div>
+        <div class="mt-2 pt-2">
+            <a href="/Identity/Admin/">Return to List</a>
+        </div>
+    </div>
+
+    @*Email section*@
+    <div class="col-md-6 mb-4 ">
+        <h4>Change Email</h4>
+        <partial name="_StatusMessage" for="EmailStatusMessage" />
+        <div class="row">
+            <div class="col-md-10">
+                <form id="email-form" method="post">
+                    @*<div asp-validation-summary="All" class="text-danger"></div>*@
+                    <div class="form-group">
+                        <label asp-for="Email"></label>
+                        <div class="input-group">
+                            <input asp-for="Email" class="form-control" disabled />
+                            <div class="input-group-append">
+                                <span class="input-group-text text-success font-weight-bold">✓</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Input.NewEmail"></label>
+                        <input asp-for="Input.NewEmail" class="form-control" />
+                        <span asp-validation-for="Input.NewEmail" class="text-danger"></span>
+                    </div>
+                    <button id="change-email-button" type="submit" asp-page-handler="ChangeEmail" class="btn btn-primary">Change email</button>
+                </form>
+            </div>
+        </div>
+        <div class="mt-2 pt-2">
+            <a href="/Identity/Admin/">Return to List</a>
+        </div>
+    </div>
+
+    @*Role section*@
+    <div class="col-md-6 mb-4 ">
+        <h4>Update Role</h4>
+        <partial name="_StatusMessage" for="RoleStatusMessage" />
+        <partial name="_StatusMessage" for="StatusStatusMessage" />
+        <div class="row">
+            <div class="col-md-10">
+                <form id="role-form" method="post">
+                    @*<div asp-validation-summary="All" class="text-danger"></div>*@
+                    <div class="form-group">
+                        <label asp-for="Input.NewRole"></label>
+                        <select asp-for="Input.NewRole" class="form-control">
+                            @{
+                                if (Model.RoleList != null)
+                                {
+                                    foreach (var role in Model.RoleList)
+                                    {
+                                        if (role.Name == Model.Role)
+                                        {
+                                            <option value="@role.Name" selected>@role.Name</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@role.Name">@role.Name</option>
+                                        }
+                                    }
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="Input.NewRole" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+
+                        <label asp-for="Input.Status"></label>
+                        <select asp-for="Input.Status" class="form-control">
+                            @{
+                                foreach (Status status in Enum.GetValues(typeof(Status)))
+                                {
+                                    <option value="@status.ToString()">@status.ToLabel()</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="Input.Status" class="text-danger"></span>
+                    </div>
+                    <button id="change-role-button" type="submit" asp-page-handler="ChangeRole" class="btn btn-primary">Update Role</button>
+                </form>
+            </div>
+        </div>
+        <div class="mt-2 pt-2">
+            <a href="/Identity/Admin/">Return to List</a>
+        </div>
+    </div>
+</div>
+<script>
+    $('select[multiple]').multiselect({
+        columns: 1,
+
+    });
+</script>
+
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+
+}

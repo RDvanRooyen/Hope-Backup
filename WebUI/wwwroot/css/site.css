@@ -1,0 +1,185 @@
+@import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
+
+html, body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+a, .btn-link {
+    color: #0366d6;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #1b6ec2;
+    border-color: #1861ac;
+}
+
+.content {
+    padding-top: 1.1rem;
+}
+
+.valid.modified:not([type=checkbox]) {
+    outline: 1px solid #26b050;
+}
+
+.invalid {
+    outline: 1px solid red;
+}
+
+.validation-message {
+    color: red;
+}
+
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+    #blazor-error-ui .dismiss {
+        cursor: pointer;
+        position: absolute;
+        right: 0.75rem;
+        top: 0.5rem;
+    }
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 22px;
+}
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: .4s;
+    transition: .4s;
+}
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        -webkit-transition: .4s;
+        transition: .4s;
+    }
+
+input:checked + .slider {
+    background-color: #2196F3;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+    -webkit-transform: translateX(22px);
+    -ms-transform: translateX(22px);
+    transform: translateX(22px);
+}
+
+/* Rounded sliders */
+.slider.round {
+    border-radius: 22px;
+}
+
+    .slider.round:before {
+        border-radius: 50%;
+    }
+
+/* Report Controls */
+.btn-pdf {
+    color: #a30900;
+    background-color: transparent;
+    border-color: #a30900;
+}
+
+    .btn-pdf:hover {
+        color: #fff;
+        background-color: #c90b00;
+        border-color: #a30900;
+    }
+
+    .btn-pdf:not(:disabled):not(.disabled):active {
+        color: #fff;
+        background-color: #a30900;
+        border-color: #700701;
+    }
+
+.btn-csv {
+    color: #006100;
+    background-color: transparent;
+    border-color: #006100;
+}
+
+    .btn-csv:hover {
+        color: #fff;
+        background-color: #008000;
+        border-color: #006100;
+    }
+
+    .btn-csv:not(:disabled):not(.disabled):active {
+        color: #fff;
+        background-color: #006100;
+        border-color: #014201;
+    }
+
+.input-group-text.inverted-colors {
+    color: #e9ecef;
+    background-color: #495057;
+}
+
+
+/* 
+    The standard zblazor css has some weirdly overagressive rules for every single div under it.
+    This ensures that the divs under the selected item in the list are styled with the appropriate highlight.
+*/
+.zb-quick-autocomplete-items-scrollable div.zb-quick-autocomplete-active div,
+.zb-quick-autocomplete-items-scrollable div.zb-quick-autocomplete-active.zb-quick-autocomplete-active:hover div {
+    background-color: #5791F5;
+    color: #ffffff;
+}
+
+.zb-quick-autocomplete-items-scrollable div.zb-quick-autocomplete-item:hover div {
+    background-color: #e9e9e9;
+}
+
+/* Since Sharon likes that sidebar color so much */
+.purple-gradient {
+    background-image: linear-gradient(to right, rgb(5, 39, 103) 0%, #3a0647 70%);
+}
+
+/* 
+    prevent mat dialogs from cutting off autocomplete dropdowns
+    (because the attribute options aren't robust enough to do it that way)
+*/
+.mdc-dialog__surface, .mdc-dialog__content {
+    overflow: unset !important;
+}
+
+/* set minimum pixel width */
+.mw-500px {
+    min-width: 500px;
+}

@@ -1,0 +1,15 @@
+﻿@using Microsoft.AspNetCore.Components.Web
+
+<a class="dropdown-item" href="@Url" @onclick="e=> Dropdown.HandleSelect(Url, ChildContent)">@ChildContent(Text)</a>
+
+@code {
+	[CascadingParameter(Name = "Dropdown")]
+	public Dropdown Dropdown { get; set; }
+
+	[Parameter]
+	public string Url { get; set; }
+	[Parameter]
+	public string Text { get; set; }
+	[Parameter]
+	public RenderFragment<string> ChildContent { get; set; }
+}

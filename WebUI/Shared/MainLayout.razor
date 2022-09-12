@@ -1,0 +1,56 @@
+﻿@inherits LayoutComponentBase
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Raleway&display=swap');
+</style>
+@*"page" div wrapper needed for update to .NET 5*@
+
+<div class="page">
+    <CascadingValue Value="@this" Name="MainLayout">
+
+        @*<div class="sidebar">
+                <NavMenu />
+            </div>*@
+
+        <div class="main">
+            <MatProgressBar Indeterminate="true" Closed="@(!_somethingIsInProgress)" />
+
+            <div>
+                <LoginDisplay />
+            </div>
+
+            <div class="content px-4 mb-5" style="height:auto; min-height:80vh;">
+                @Body
+            </div>
+        </div>
+
+    </CascadingValue>
+</div>
+<footer class="footer align-bottom border-top text-muted" style="width:100%; height:auto; min-height:50px; background-color: white;">
+    <div class="container">
+        &copy; @DateTime.Today.Year TechRiver LLC &nbsp;
+         &nbsp; &nbsp; <a href="/PrivacyPolicy"><i class="fa fa-shield-alt" aria-hidden="true"></i> Privacy Policy</a>
+         &nbsp; &nbsp; <a href="/TermsConditions"><i class="fa fa-gavel" aria-hidden="true"></i> Terms And Conditions</a>
+    </div>
+</footer>
+
+@code {
+    private bool _somethingIsInProgress;
+
+    public void ShowProgressBar()
+    {
+        if (!_somethingIsInProgress)
+        {
+            _somethingIsInProgress = true;
+            StateHasChanged();
+        }
+    }
+
+    public void HideProgressBar()
+    {
+        if (_somethingIsInProgress)
+        {
+            _somethingIsInProgress = false;
+            StateHasChanged();
+        }
+    }
+}

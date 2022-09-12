@@ -1,0 +1,415 @@
+﻿@page "/search/result"
+@using System.IO
+@using Microsoft.Extensions.Configuration
+@using System.Text.RegularExpressions
+@using System.Web
+@using WebUI.Components.Forms
+@using WebUI.Data
+@using WebUI.Factory
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+
+<form hidden>
+    <BlazoredTextEditor @ref="@SummaryRTF">
+    </BlazoredTextEditor>
+</form>
+
+<MatDrawerContainer>
+    <MatDrawer @bind-Opened="@Opened" Mode="@MatDrawerMode.Modal">
+        <div class="form-group row" style="padding-left:30px;">
+            <div>
+                <a style="font-size:xx-large;"><strong>Filter</strong></a>
+                <a style="padding-left:90px;"><ActionButton Action="plain" IsTextButton="true" MinimizePadding="false" ButtonText="Apply" OnClick="Search" /></a><br /><br />
+                <a><strong>@NoMatches Resource Matches</strong></a><br />
+                <div class="form-group row" style="padding-left:10px; padding-right:50px;">
+                    <div>
+                        @foreach (var grade in SelectedGradesTitle)
+                        {
+                            <a style="border:1px solid black; fill:lightgray; border-radius:3px;">@grade</a><a>&nbsp;</a>
+                        }
+                    </div>
+                    <div>
+                        @foreach (var subject in SelectedSubjectsTitle)
+                        {
+                            <a style="border:1px solid black; fill:lightgray; border-radius:3px;">@subject</a><a>&nbsp;</a>
+                        }
+                    </div>
+                </div>
+                <hr />
+                <a>Grade</a>
+                @foreach (var grade in GradesList)
+                {
+                    @if (SelectedGrades.Contains(grade.Value))
+                    {
+                        GradeSelectedFlag = true;
+                    }
+                    else
+                    {
+                        GradeSelectedFlag = false;
+                    }
+                    <div class="form-group">
+                        <input @bind="GradeSelectedFlag" @onclick="(() => SelectedGradesChanged(grade.Value))" type="checkbox" />
+                        <a>@grade.Text</a>
+                    </div>
+                }
+
+                <hr />
+                <a>Subject</a>
+                @foreach (var subject in SubjectsList)
+                {
+                    @if (SelectedSubjects.Contains(subject.Value))
+                    {
+                        SubjectSelectedFlag = true;
+                    }
+                    else
+                    {
+                        SubjectSelectedFlag = false;
+                    }
+                    <div class="form-group">
+                        <input @bind="SubjectSelectedFlag" @onclick="(() => SelectedSubjectsChanged(subject.Value))" type="checkbox" />
+                        <a>@subject.Text</a>
+                    </div>
+                }
+            </div>
+        </div>
+    </MatDrawer>
+    <MatDrawerContent>
+        <form>
+            <div class="form-group">
+                <h1>Search Results</h1>
+                <ActionButton Action="filter" IsTextButton="true" MinimizePadding="false" OnClick="ShowHideMenu" /><a>&nbsp;</a><a>&nbsp;</a>
+                @if (Ascending)
+                {
+                    <ActionButton Action="sortasc" IsTextButton="false" MinimizePadding="false" OnClick="AscendingClicked" /><a>&nbsp;</a><a>&nbsp;</a>
+                }
+                else
+                {
+                    <ActionButton Action="sortdesc" IsTextButton="false" MinimizePadding="false" OnClick="AscendingClicked" /><a>&nbsp;</a><a>&nbsp;</a>
+                }
+                <select style="border:none">
+                    <option value=1>Featured</option>
+                    <option value=2>Oldest Date</option>
+                    <option value=3>Newest Date</option>
+                    <option value=4>Lowest Rating</option>
+                    <option value=5>Highest Rating</option>
+                </select>
+                <input style="width:350px;" placeholder="What are you looking for?" type="text" id="searchString" name="searchString" @bind="@SearchString">
+                <ActionButton Action="plain" IsTextButton="true" MinimizePadding="false" ButtonText="Search" OnClick="Search" />
+            </div>
+
+            @foreach (var result in Results)
+            {
+                <a>@result.Title</a><br />
+            }
+            <div style="width:50%">
+                <MatPaginator Length="@Length" PageSize="@pageSize" Page="@OnPage"></MatPaginator>
+
+
+            </div>
+        </form>
+    </MatDrawerContent>
+</MatDrawerContainer>
+
+
+
+@code{
+    [Inject]
+    public ApplicationDbContext<ApplicationUser> dbContext { get; set; }
+
+    //[Parameter]
+    public string SearchString { get; set; }
+    //[Parameter]
+    public string SearchSubject { get; set; }
+    //[Parameter]
+    public string SearchGrade { get; set; }
+
+    BlazoredTextEditor SummaryRTF { get; set; } = new BlazoredTextEditor();
+    string SummaryText;
+
+    List<ContentDetails> Results = new List<ContentDetails>();
+
+    bool Opened = false;
+    public bool Ascending { get; set; }
+    public int NoMatches { get; set; }
+
+    public MultiSelectList GradesList { get; set; } = new MultiSelectList("");
+    List<string> SelectedGrades = new();
+    List<string> SelectedGradesTitle = new();
+    bool GradeSelectedFlag = true;
+
+    public MultiSelectList SubjectsList { get; set; } = new MultiSelectList("");
+    List<string> SelectedSubjects = new();
+    List<string> SelectedSubjectsTitle = new();
+    bool SubjectSelectedFlag = true;
+
+    List<ContentAuthor> ContentAuthors = new List<ContentAuthor>();
+
+    int pageSize = 10;
+    int pageIndex = 0;
+    int Length;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (SearchString != null)
+        {
+            var grades = await dbContext.Grades.ToListAsync();
+            GradesList = new MultiSelectList(grades, nameof(Grade.Id), nameof(Grade.Title));
+            var subjects = await dbContext.Subjects.ToListAsync();
+            SubjectsList = new MultiSelectList(subjects, nameof(Subject.Id), nameof(Subject.Title));
+            ContentAuthors = await dbContext.ContentAuthors.ToListAsync();
+
+            var allContents = dbContext.ContentDetails.ToList();
+            foreach (var content in allContents)
+            {
+                bool loading = true;
+                while (loading)
+                {
+                    try
+                    {
+                        await this.SummaryRTF.LoadContent(content.Summary);
+                        var summary = await this.SummaryRTF.GetText();
+                        SummaryText = summary;
+                        loading = false;
+                    }
+                    catch
+                    {
+                        await Task.Delay(10);
+                        loading = true;
+                    }
+                }
+
+                if (content.Title.ToUpper().Contains(SearchString.ToUpper()) || SummaryText.ToUpper().Contains(SearchString.ToUpper()))
+                {
+                    if (SearchGrade == null || SearchGrade != "")
+                    {
+                        if (!Results.Any(x => x.Id == content.Id))
+                        {
+                            Results.Add(content);
+                        }
+                    }
+                    else if (dbContext.ContentGrades.Any(x => x.ContentDetailsId == content.Id && x.GradeId == int.Parse(SearchGrade)))
+                    {
+                        if (!Results.Any(x => x.Id == content.Id))
+                        {
+                            Results.Add(content);
+                        }
+                    }
+                    if (SearchSubject == null || SearchSubject != "")
+                    {
+                        if (!Results.Any(x => x.Id == content.Id))
+                        {
+                            Results.Add(content);
+                        }
+                    }
+                    else if (dbContext.ContentSubjects.Any(x => x.ContentDetailsId == content.Id && x.SubjectId == int.Parse(SearchSubject)))
+                    {
+                        if (!Results.Any(x => x.Id == content.Id))
+                        {
+                            Results.Add(content);
+                        }
+                    }
+                }
+            }
+
+            var contentAuthors = dbContext.ContentAuthors.ToList();
+
+            foreach (var item in contentAuthors)
+            {
+                var authorName = dbContext.Users.Where(x => x.Id == item.AuthorId).FirstOrDefault().FullName;
+                if (authorName.Contains(SearchString))
+                {
+                    var content = dbContext.ContentDetails.Where(x => x.Id == item.ContentId).FirstOrDefault();
+
+                    if (!Results.Any(x => x.Id == content.Id))
+                    {
+                        Results.Add(content);
+                    }
+                }
+            }
+
+            if (Results.Count() > 0)
+            {
+                if (Ascending)
+                {
+                    Results = Results.OrderBy(x => x.CreatedDateTime).ToList();
+                }
+                else
+                {
+                    Results = Results.OrderByDescending(x => x.CreatedDateTime).ToList();
+                }
+
+                Length = Results.Count();
+            }
+            else
+            {
+                Length = 0;
+            }
+        }
+    }
+    async Task SelectedGradesChanged(string value)
+    {
+        var selectedGrade = value;
+        var selectedGradeTitle = dbContext.Grades.Where(x => x.Id == int.Parse(value)).FirstOrDefault().Title;
+
+        if (SelectedGrades.Contains(selectedGrade))
+        {
+            SelectedGrades.Remove(selectedGrade);
+            SelectedGradesTitle.Remove(selectedGradeTitle);
+        }
+        else
+        {
+            SelectedGrades.Add(selectedGrade);
+            SelectedGradesTitle.Add(selectedGradeTitle);
+        }
+    }
+    async Task SelectedSubjectsChanged(string value)
+    {
+        var selectedSubject = value;
+        var selectedSubjectTitle = dbContext.Subjects.Where(x => x.Id == int.Parse(value)).FirstOrDefault().Title;
+
+        if (SelectedSubjects.Contains(selectedSubject))
+        {
+            SelectedSubjects.Remove(selectedSubject);
+            SelectedSubjectsTitle.Remove(selectedSubjectTitle);
+        }
+        else
+        {
+            SelectedSubjects.Add(selectedSubject);
+            SelectedSubjectsTitle.Add(selectedSubjectTitle);
+        }
+    }
+
+    void ShowHideMenu()
+    {
+        Opened = !Opened;
+    }
+
+    void AscendingClicked()
+    {
+        Ascending = !Ascending;
+    }
+
+    async Task Search()
+    {
+        Results = new List<ContentDetails>();
+        if (SearchString != null)
+        {
+            var grades = await dbContext.Grades.ToListAsync();
+            GradesList = new MultiSelectList(grades, nameof(Grade.Id), nameof(Grade.Title));
+            var subjects = await dbContext.Subjects.ToListAsync();
+            SubjectsList = new MultiSelectList(subjects, nameof(Subject.Id), nameof(Subject.Title));
+            ContentAuthors = await dbContext.ContentAuthors.ToListAsync();
+
+            var allContents = dbContext.ContentDetails.ToList();
+            foreach (var content in allContents)
+            {
+                bool loading = true;
+                while (loading)
+                {
+                    try
+                    {
+                        await this.SummaryRTF.LoadContent(content.Summary);
+                        var summary = await this.SummaryRTF.GetText();
+                        SummaryText = summary;
+                        loading = false;
+                    }
+                    catch
+                    {
+                        await Task.Delay(10);
+                        loading = true;
+                    }
+                }
+
+                if (content.Title.ToUpper().Contains(SearchString.ToUpper()) || SummaryText.ToUpper().Contains(SearchString.ToUpper()))
+                {
+                    if (SelectedGrades == null || SelectedGrades.Count() == 0)
+                    {
+                        if (!Results.Any(x => x.Id == content.Id))
+                        {
+                            Results.Add(content);
+                        }
+                    }
+                    else
+                    {
+                        foreach (var item in SelectedGrades)
+                        {
+                            if (dbContext.ContentGrades.Any(x => x.ContentDetailsId == content.Id && x.GradeId == int.Parse(item)))
+                            {
+                                if (!Results.Any(x => x.Id == content.Id))
+                                {
+                                    Results.Add(content);
+                                }
+                            }
+                        }
+                    }
+
+                    if (SelectedSubjects == null || SelectedSubjects.Count() == 0)
+                    {
+                        if (!Results.Any(x => x.Id == content.Id))
+                        {
+                            Results.Add(content);
+                        }
+                    }
+                    else
+                    {
+                        foreach (var item in SelectedSubjects)
+                        {
+                            if (dbContext.ContentSubjects.Any(x => x.ContentDetailsId == content.Id && x.SubjectId == int.Parse(item)))
+                            {
+                                if (!Results.Any(x => x.Id == content.Id))
+                                {
+                                    Results.Add(content);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            var contentAuthors = dbContext.ContentAuthors.ToList();
+
+            foreach (var item in contentAuthors)
+            {
+                var authorName = dbContext.Users.Where(x => x.Id == item.AuthorId).FirstOrDefault().FullName;
+                if (authorName.Contains(SearchString))
+                {
+                    var content = dbContext.ContentDetails.Where(x => x.Id == item.ContentId).FirstOrDefault();
+
+                    if (!Results.Any(x => x.Id == content.Id))
+                    {
+                        Results.Add(content);
+                    }
+                }
+            }
+
+            if (Results.Count() > 0)
+            {
+                if (Ascending)
+                {
+                    Results = Results.OrderBy(x => x.CreatedDateTime).ToList();
+                }
+                else
+                {
+                    Results = Results.OrderByDescending(x => x.CreatedDateTime).ToList();
+                }
+
+                Length = Results.Count();
+            }
+            else
+            {
+                Length = 0;
+            }
+        }
+    }
+
+    void Filter()
+    {
+        Ascending = !Ascending;
+    }
+
+    void OnPage(MatPaginatorPageEvent e)
+    {
+        pageSize = e.PageSize;
+        pageIndex = e.PageIndex;
+    }
+}

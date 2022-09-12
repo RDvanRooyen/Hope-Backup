@@ -1,0 +1,149 @@
+﻿@page "/content/my"
+@using WebUI.Components
+@using WebUI.Factory
+@using BlazorTable
+@using WebUI.ViewModels
+@using WebUI.Components.Abstract
+@using WebUI.Services
+@using Microsoft.AspNetCore.Hosting
+
+@inject AuthenticationStateProvider _authenticationStateProvider
+@inject ServiceFactory _factory
+@inject IMatToaster _toaster
+@inject IWebHostEnvironment Environment
+@inject System.Net.Http.HttpClient HttpClient
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject NavigationManager NavManager
+
+<h3 class="mb-5">Content List</h3>
+<div class="row m-0">
+    <div class="col-md-12 p-0">
+        <div class="mb-4">
+            <ATableView TItem="ContentDetails"
+                        AllItems="_myContent"
+                        UseAllItems=true
+                        TService="ServiceBase"
+                        Roles="SuperAdmin, Admin, User"
+                        IdField="@(x => x.Id)"
+                        EditIdField="@(x => x.Id)"
+                        IdFieldFilter="@(x=>x.Id== 0)"
+                        NameField="@(x => x.Title)"
+                        Title=""
+                        ShowActiveToggle="false"
+                        AdditionalCSSClasses="m-0 p-0">
+
+                <ToolbarContent>
+                    <div class="float-right" role="group" aria-label="Toolbar">
+                        <a href="/content/entry/0" class="btn btn-sm btn-outline-info"><i class="fas fa-plus mr-1"></i>  Add</a>
+                    </div>
+                </ToolbarContent>
+                <PagerToolbar>
+                    <h5>My Content</h5>
+                </PagerToolbar>
+                <ChildContent>
+
+                    <MgmtTableCol TItem="ContentDetails" Title="Title" Field="@(x=>x.Id)" Filterable="false" Width="400px">
+                        <Template>
+                            <a href="/content/view/@context.Id" class="mr-1" title="click to view"><i class="fas fa-eye"></i></a>
+                            <a href="/content/entry/@context.Id" class="mr-1" title="click to edit"><i class="fas fa-edit"></i></a>
+                            <a href="/content/entry/@context.Id" title="click to edit">@context.Title</a>
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentDetails" Title="Summary" Field="@(x=>x.Summary)" Width="400px">
+                        <Template>
+                            @(context.SummaryTwoSentences)
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentDetails" Title="Date Submitted" Field="@(x=>x.SubmittedDateSortable)">
+                        <Template>
+                            @context.SubmittedDateString
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentDetails" Title="Date Approved" Field="@(x=>x.ApprovedDateSortable)">
+                        <Template>
+                            @context.ApprovedDateString
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentDetails" Title="Moderator Comments" Field="@(x=>x.Id)">
+                        <Template>
+                        </Template>
+                    </MgmtTableCol>
+
+                    <MgmtTableCol TItem="ContentDetails" Title="Status" Field="@(x=>x.Status)" />
+                </ChildContent>
+            </ATableView>
+        </div>
+
+        <hr />
+        <div class="mb-4">
+            <ATableView TItem="ContentBookmark"
+                        AllItems="_bookmarks"
+                        UseAllItems=true
+                        TService="ServiceBase"
+                        Roles="SuperAdmin, Admin, User"
+                        IdField="@(x => x.ContentDetailsId)"
+                        EditIdField="@(x => x.ContentDetailsId)"
+                        IdFieldFilter="@(x=>x.ContentDetailsId== 0)"
+                        NameField="@(x => x.ContentDetails.Title)"
+                        Title=""
+                        ShowActiveToggle="false"
+                        AdditionalCSSClasses="m-0 p-0">
+
+                <ToolbarContent>
+                    <div class="float-right" role="group" aria-label="Toolbar">
+                        @if (_bookmarkChecked > 0)
+                        {
+                            <a href="/content/bookmarks/share/@Service.GetCurrentUser().Id" class="btn btn-sm btn-outline-info"><i class="fas fa-share mr-1"></i>  Share as Web Page</a>
+                        }
+                        else
+                        {
+                            <button class="btn btn-sm btn-outline-info" disabled><i class="fas fa-share mr-1"></i>  Share as Web Page</button>
+                        }
+                    </div>
+                </ToolbarContent>
+                <PagerToolbar>
+                    <h5>Bookmarked Content</h5>
+                </PagerToolbar>
+                <ChildContent>
+
+                    <MgmtTableCol TItem="ContentBookmark" Title="" Field="@(x=>x.Shared)" Width="50px">
+                        <Template>
+                            <input type="checkbox" checked="@context.Shared" @onchange="(ChangeEventArgs e)=> { SelectBookmark(e, context); }" />
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentBookmark" Title="Title" Field="@(x=>x.ContentDetails.Title)" Filterable="false" Width="400px">
+                        <Template>
+                            <a href="/content/view/@context.ContentDetails.Id" class="mr-1" title="click to view"><i class="fas fa-eye"></i></a>
+                            <a href="/content/entry/@context.ContentDetails.Id" class="mr-1" title="click to edit"><i class="fas fa-edit"></i></a>
+                            <a href="/content/entry/@context.ContentDetails.Id" title="click to edit">@context.ContentDetails.Title</a>
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentBookmark" Title="Summary" Field="@(x=>x.ContentDetails.Summary)" Width="400px">
+                        <Template>
+                            @(context.ContentDetails.SummaryTwoSentences)
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentBookmark" Title="Date Submitted" Field="@(x=>x.ContentDetails.SubmittedDateSortable)">
+                        <Template>
+                            @context.ContentDetails.SubmittedDateString
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentBookmark" Title="Date Approved" Field="@(x=>x.ContentDetails.ApprovedDateSortable)">
+                        <Template>
+                            @context.ContentDetails.ApprovedDateString
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentBookmark" Title="Moderator Comments" Field="@(x=>x.ContentDetails.Id)">
+                        <Template>
+                        </Template>
+                    </MgmtTableCol>
+
+                    <MgmtTableCol TItem="ContentBookmark" Title="Status" Field="@(x=>x.ContentDetails.Status)" />
+                </ChildContent>
+            </ATableView>
+        </div>
+
+    </div>
+</div>
+}

@@ -1,0 +1,62 @@
+﻿
+
+@page
+@model WebUI.Areas.Identity.Pages.Admin.IndexModel
+@{
+    ViewData["Title"] = "Users";
+}
+
+
+<div class="form-inline">
+        <h3 class="modal-title p-2 m-1">@ViewData["Title"]</h3>
+        <button onclick="location.href='/Identity/Admin/Create/'" class="btn btn-outline-primary p-2 m-1">Create New User</button>
+</div>
+<hr />
+
+@*<partial name="_StatusMessage" model="Model.StatusMessage" />*@
+@{
+    <div>
+        <table class="table table-sm table-striped">
+            <tr class="table-row thead-light">
+                <th>Email</th>
+                <th>Email Confirmed?</th>
+                <th>2FA Enabled?</th>
+                <th>Role</th>
+                <th></th>
+                <th></th>
+            </tr>
+            @foreach (var user in Model?.UserRoleDict)
+            {
+                <tr class="table-row">
+                    <td>@user.Key.Email</td>
+                    <td>@user.Key.EmailConfirmed</td>
+                    <td>@user.Key.TwoFactorEnabled</td>
+                    <td>
+                        @foreach (var roleName in user.Value)
+                        {
+                            @if (roleName.ToLower().Contains("admin"))
+                            {
+                                <span class="badge badge-primary mt-2 mb-2">@roleName</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary mt-2 mb-2">@roleName</span>
+                            }
+                        }
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-outline-secondary" name="edit-user" value="@user.Key.Id" onclick="location.href='/Identity/Admin/Edit/@user.Key.Id/'">Edit</button>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-outline-danger" name="delete-user" value="@user.Key.Id" onclick="location.href='/Identity/Admin/Delete/@user.Key.Id/'">Delete</button>
+                    </td>
+                </tr>
+            }
+        </table>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+

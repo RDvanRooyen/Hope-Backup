@@ -1,0 +1,62 @@
+﻿@page
+@using HOPE_CleanBuild.Areas.Identity.Pages.Account.Manage
+@model IndexModel
+@{
+    ViewData["Title"] = "Profile";
+    ViewData["ActivePage"] = ManageNavPages.Index;
+}
+
+<h4>@ViewData["Title"]</h4>
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+<!-- JS & CSS library of MultiSelect plugin -->
+<script src="https://phpcoder.tech/multiselect/js/jquery.multiselect.js"></script>
+<link rel="stylesheet" href="https://phpcoder.tech/multiselect/css/jquery.multiselect.css">
+
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+<div class="row">
+    <div class="col-md-6">
+        <form id="profile-form" method="post">            
+            <div class="form-group">
+                <label asp-for="Input.FirstName"></label>
+                <input asp-for="Input.FirstName" class="form-control" />
+                <span asp-validation-for="Input.FirstName" class="text-danger"></span>
+            </div>            
+            <div class="form-group">
+                <label asp-for="Input.LastName"></label>
+                <input asp-for="Input.LastName" class="form-control" />
+                <span asp-validation-for="Input.LastName" class="text-danger"></span>
+            </div>            
+            <div class="form-group">
+                <label asp-for="Input.School"></label>
+                <input asp-for="Input.School" class="form-control" />
+                <span asp-validation-for="Input.School" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="SelectedGrades">Grades*</label>
+                <select name="SelectedGrades[]" asp-for="SelectedGrades" asp-items="Model.GradesList" class="form-control" multiple>               
+                </select>
+                <span asp-validation-for="SelectedGrades" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="SelectedSubjects">Subjects*</label>
+                <select name="SelectedSubjects[]" asp-for="SelectedSubjects" asp-items="Model.SubjectsList" class="form-control" multiple>               
+                </select>
+                <span asp-validation-for="SelectedSubjects" class="text-danger"></span>
+            </div>
+            <button id="update-profile-button" type="submit" class="btn btn-primary">Save</button>
+        </form>
+    </div>
+</div>
+<script>
+    $('select[multiple]').multiselect({
+        columns  : 1,
+
+    });
+</script>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

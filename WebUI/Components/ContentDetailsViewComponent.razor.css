@@ -1,0 +1,34 @@
+﻿
+.unlock:hover .far,
+.unlock .fas {
+    display: none;
+}
+
+.unlock:hover .fas {
+    display: inline-block;
+}
+
+
+.lock {
+    width: 16px;
+    margin: 1px;
+    padding: 1px;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.unlock {
+    width: 16px;
+    margin: 1px;
+    padding: 1px;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.lock .far {
+    display: none;
+}
+
+.lock .fas {
+    display: inline-block;
+}

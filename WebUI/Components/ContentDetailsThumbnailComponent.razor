@@ -1,0 +1,24 @@
+﻿
+
+@inject NavigationManager NavigationManager
+@inject NavigationManager NavManager
+<div class="col-md-3 p-3 text-center" @onclick="@(()=> { ShowContentDetail(ContentDetails.Id); })">
+    <div class="card mb-2 m-auto @_cssClass">
+        @if (!string.IsNullOrEmpty(ContentDetails.PrimaryPhotoPath))
+        {
+
+            <img class="card-img-top"
+                 src="@WebUI.Helpers.ImageTool.ImagePathToBase64(System.IO.Path.Combine(Configuration["AppSettings:BaseDirectory"], ContentDetails.PrimaryPhotoPath).Replace(@"\",@"/").ToString())"
+                 alt="@ContentDetails.PrimaryPhotoPath" />
+        }
+        else
+        {
+            <img class="card-img-top"
+                 src="/images/logo-gray.png"
+                 alt="@ContentDetails.Title" />
+        }
+    </div>
+    <label>@ContentDetails.Title</label>
+    <p>@(ContentDetails.SummaryTwoSentences)</p>
+</div>
+ 

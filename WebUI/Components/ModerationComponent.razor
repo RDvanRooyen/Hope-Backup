@@ -1,0 +1,100 @@
+﻿@using WebUI.Components
+@using WebUI.Components.Forms
+@using WebUI.Factory
+@using BlazorTable
+@using WebUI.ViewModels
+@using WebUI.Components.Abstract
+@using WebUI.Services
+@using Microsoft.AspNetCore.Hosting
+@using WebUI.Data
+
+
+@inject AuthenticationStateProvider _authenticationStateProvider
+@inject ServiceFactory _factory
+@inject IMatToaster _toaster
+@inject IWebHostEnvironment Environment
+@inject System.Net.Http.HttpClient HttpClient
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject NavigationManager NavManager
+
+@if (ModerationCategory == UserModeration)
+{
+    <div class="row m-0">
+        <div class="col-md-12 p-0">
+            <h3>User List</h3>
+            <div class="mb-4">
+                <ATableView TItem="ApplicationUser"
+                            AllItems="_users"
+                            UseAllItems=true
+                            TService="ServiceBase"
+                            Roles="SuperAdmin, Admin, Moderator"
+                            IdField="@(x => x.Id)"
+                            IdFieldFilter="@(x=>x.Id.Equals(string.Empty))"
+                            NameField="@(x => x.FullName)"
+                            Title=""
+                            ShowActiveToggle="false"
+                            AdditionalCSSClasses="m-0 p-0">
+
+                    <ToolbarContent>
+                    </ToolbarContent>
+                    <PagerToolbar>
+                        <h4>Registration Moderation List</h4>
+                    </PagerToolbar>
+                    <ChildContent>
+
+                        <MgmtTableCol TItem="ApplicationUser" Title="Last Name" Field="@(x=>x.LastName)" Filterable="false" Width="200px">
+                            <Template>
+                                <a>@context.LastName</a>
+                            </Template>
+                        </MgmtTableCol>
+                        <MgmtTableCol TItem="ApplicationUser" Title="First Name" Field="@(x=>x.FirstName)" Filterable="false" Width="200px">
+                            <Template>
+                                <a>@context.FirstName</a>
+                            </Template>
+                        </MgmtTableCol>
+                        <MgmtTableCol TItem="ApplicationUser" Title="School" Field="@(x=>x.School)" Filterable="false" Width="200px">
+                            <Template>
+                                <a>@context.FirstName</a>
+                            </Template>
+                        </MgmtTableCol>
+                        <MgmtTableCol TItem="ApplicationUser" Title="Grade" Field="@(x=>x.Grades)">
+                            <Template>
+                                @foreach (var g in @context.Grades)
+                                {
+                                    <a>@g.Grade.Title</a>
+                                    <br />
+                                }
+                            </Template>
+                        </MgmtTableCol>
+                        <MgmtTableCol TItem="ApplicationUser" Title="Date Submitted" Field="@(x=>x.CreatedDateTime)">
+                            <Template>
+                                @context.CreatedDateTime.ToShortDateString()
+                            </Template>
+                        </MgmtTableCol>
+                        <MgmtTableCol TItem="ApplicationUser" Title="Action" Field="@(x=>x.Id)">
+                            <Template>
+                                <a @onclick="() => { _rejectUserId=context.Id; _rejectUserName=context.FullName; OpenDeleteDialog(); }">&nbsp;<i class="fa fa-times" aria-hidden="true"></i></a>
+                                <a @onclick="() => { ApproveUser(context.Id); }"><i class="fa fa-check" aria-hidden="false"></i>&nbsp;</a>
+                                <MatDialog @bind-IsOpen="@_deleteDialogIsOpen">
+                                    <MatDialogContent>
+                                        <div class="row">
+                                            <div class="col">
+                                                <p class="pt-1">@($"Are you sure you want to Reject {@_rejectUserName}")</p>
+                                            </div>
+                                        </div>
+                                    </MatDialogContent>
+                                    <MatDialogActions>
+                                        <button class="btn btn-sm btn-danger btn-sm p-1 m-1" type="button" @onclick="() => { RejectUser(_rejectUserId); }">Reject</button>
+                                        <button class="btn btn-sm btn-primary btn-sm p-1 m-1" type="button" @onclick="CloseDeleteDialog">Cancel</button>
+                                    </MatDialogActions>
+                                </MatDialog>
+                            </Template>
+                        </MgmtTableCol>
+                    </ChildContent>
+                </ATableView>
+            </div>
+        </div>
+    </div>
+}
+

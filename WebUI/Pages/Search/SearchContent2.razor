@@ -1,0 +1,201 @@
+﻿@page "/search/content"
+@using System.IO
+@using Microsoft.Extensions.Configuration
+@using WebUI.Components.Forms
+@using WebUI.Data
+@using WebUI.Factory
+
+@inject ServiceFactory _factory
+@inject IMatToaster _toaster
+@inject NavigationManager _navigationManager
+@inject AuthenticationStateProvider _authenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject NavigationManager NavManager
+
+@typeparam TService
+
+@inject IJSRuntime JsRuntime
+
+<form style="text-align:center">
+    <div class="form-group" style="text-align: center">
+        <h1>@Title</h1>
+        <p>@Paragraph</p>
+    </div>
+    <div style="align-items:center;">
+        <div class="form-group row" style="vertical-align: middle;">
+
+            <input style="width:350px;" placeholder="What are you looking for?" type="text" id="searchString" name="searchString" @bind="@SearchString"><a>&nbsp;</a><a>&nbsp;</a>
+
+
+
+            <select style="width:275px;" @bind="SearchSubject">
+                <option value="-1">Select subject</option>
+                @foreach (var item in Subjects)
+                {
+                    <option value="@item.Id">@item.Title</option>
+                }
+            </select><a>&nbsp;</a><a>&nbsp;</a>
+
+            <select style="width:275px;" @bind="SearchGrade">
+                <option value="-1">Select grade</option>
+                @foreach (var item in Grades)
+                {
+                    <option value="@item.Id">@item.Title</option>
+                }
+            </select><a>&nbsp;</a><a>&nbsp;</a>
+
+            <ActionButton Action="plain" IsTextButton="true" MinimizePadding="false" ButtonText="Search" OnClick="SearchForContent" />
+        </div>
+    </div>
+</form>
+
+<div class="form-group">
+    <label for="Title"><strong>Featured Content</strong></label> <br />
+    <div class="form-group row">
+        @if (FeaturedContent.Count() != 0)
+        {
+            @foreach (var item in FeaturedContent)
+            {
+                filePath = Path.Combine(item.Id.ToString(), "Photos");
+                try
+                {
+                    filePath = dbContext.ContentFiles.Where(g => g.ContentId == item.Id && g.RelativePath.Contains(filePath)).FirstOrDefault().RelativePath;
+                    <div class="form-group">
+                        <a href="/contentDetails/@item.Id">
+                            <img src="@GetImageBase64(Path.Combine(Configuration["AppSettings:BaseDirectory"], filePath).Replace(@"\",@"/").ToString())"
+                                 height="150"
+                                 alt="@filePath.Split(@"\").Last()"><br />
+                        </a>
+                        <a style="padding-left:10px;">@item.Title &nbsp;</a>
+                    </div>
+                }
+                catch
+                {
+                    <a>@item.Title &nbsp;</a>
+                }
+            }
+        }
+        else
+        {
+            <a style="padding-left:50px;">No Featured Content at this time...</a>
+        }
+
+    </div>
+
+    <label for="Title"><strong>New Content</strong></label> <br />
+    <div class="form-group row">
+        @if (NewContent.Count() != 0)
+        {
+            @foreach (var item in NewContent)
+            {
+                filePath = Path.Combine(item.Id.ToString(), "Photos");
+
+                if (dbContext.ContentFiles.Where(g => g.ContentId == item.Id && g.RelativePath.Contains(filePath)).Any())
+                {
+                    filePath = dbContext.ContentFiles.Where(g => g.ContentId == item.Id && g.RelativePath.Contains(filePath)).FirstOrDefault().RelativePath;
+                    <div class="form-group">
+                        <a href="/contentDetails/@item.Id">
+                            <img src="@GetImageBase64(Path.Combine(Configuration["AppSettings:BaseDirectory"], filePath).Replace(@"\",@"/").ToString())"
+                                 height="150" alt="@filePath.Split(@"\").Last()"><br />
+                        </a>
+                        <a>@item.Title &nbsp;</a>
+                    </div>
+                }
+                else
+                {
+                    <a>@item.Title &nbsp;</a>
+                }
+            }
+        }
+        else
+        {
+            <a style="padding-left:50px;">No New Content at this time...</a>
+        }
+    </div>
+</div>
+
+@code{
+
+    [CascadingParameter(Name = "MainLayout")]
+    public MainLayout MainLayout { get; set; }
+
+    TService Service { get; set; }
+    [Inject]
+    public IConfiguration Configuration { get; set; }
+
+    string Title = @"Look to the past to inform the future";
+    string Paragraph = @"The Hawaii Online Portal for Education is a curriculum and professional development project to gather and create a community of practice and collection of free and accessible digital content for Hawaiʻi students that is Hawaiʻi-authored, Hawaiʻi-specific, Hawaiʻi-grounded, and Hawaiʻi-serving. HOPE is funded to focus solely on digital content, pedagogical practices, and curriculum created by Hawaiʻi teachers, for Hawaiʻi.";
+
+    public string filePath;
+    public string SearchString { get; set; } = "";
+    public string SearchSubject { get; set; } = "";
+    public string SearchGrade { get; set; } = "";
+
+    List<Subject> Subjects = new List<Subject>();
+    List<Grade> Grades = new List<Grade>();
+
+    [Inject]
+    public ApplicationDbContext<ApplicationUser> dbContext { get; set; }
+
+    List<ContentDetails> AllContents = new List<ContentDetails>();
+    List<ContentDetails> FeaturedContent = new List<ContentDetails>();
+    List<ContentDetails> NewContent = new List<ContentDetails>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        //NavManager.NavigateTo("/content/search");
+        Service = Service ?? await _factory.CreateService<TService>(_authenticationStateProvider);
+        var content = Service.GetQueryable<ContentDetails>(false, false).ToList();
+
+        var sortedContent = from c in content
+                            orderby c.CreatedDateTime
+                            select c;
+        sortedContent.ToList().ForEach(c => AllContents.Add(c));
+
+        var grades = await dbContext.Grades.ToListAsync();
+        var subjects = await dbContext.Subjects.ToListAsync();
+
+        if (grades is not null)
+        {
+            Grades = grades;
+        }
+
+        if (subjects is not null)
+        {
+            Subjects = subjects;
+        }
+
+        for (var i = 0; i < sortedContent.Count(); i++)
+        {
+            if (i == 10)
+            {
+                return;
+            }
+            NewContent.Add(sortedContent.ElementAt(i));
+            if (sortedContent.ElementAt(i).Featured)
+            {
+                FeaturedContent.Add(sortedContent.ElementAt(i));
+            }
+        }
+    }
+
+    string GetImageBase64(string path)
+    {
+        try
+        {
+            var image = System.Drawing.Image.FromFile(path);
+            var url = "data:image/png;base64," + WebUI.Helpers.ImageTool.ImageToBase64(image);
+            return url;
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
+    public void SearchForContent()
+    {
+        _navigationManager.NavigateTo(Path.Combine("/search/", SearchString, SearchSubject, @SearchGrade).Trim());
+        //_navigationManager.NavigateTo(Path.Combine("/test/").Trim());
+    }
+}

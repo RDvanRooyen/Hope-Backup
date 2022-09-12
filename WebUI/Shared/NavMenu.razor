@@ -1,0 +1,177 @@
+﻿<style type="text/css">
+    a.nav-link {
+        white-space: nowrap;
+    }
+</style>
+
+<div class="top-row pl-4 navbar navbar-dark">
+    <a class="navbar-brand" href=""></a>
+    <button class="navbar-toggler" @onclick="ToggleNavMenu">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+</div>
+
+<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+    <ul class="nav flex-column">
+
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
+                <span class="oi oi-home" aria-hidden="true"></span>Home
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="/about" Match="NavLinkMatch.All">
+                <span class="oi oi-info" aria-hidden="true"></span>About
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="/contactUs" Match="NavLinkMatch.All">
+                <span class="oi oi-phone" aria-hidden="true"></span>Contact
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="/termsAndConditions" Match="NavLinkMatch.All">
+                <span class="oi oi-briefcase" aria-hidden="true"></span>Terms And Conditions
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="/Identity/Account/LogOut" Match="NavLinkMatch.All">
+                <span class="oi oi-account-login" aria-hidden="true"></span>Register/Login
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="/howTos" Match="NavLinkMatch.All">
+                <span class="oi oi-question-mark" aria-hidden="true"></span>How-To's
+            </NavLink>
+        </li>
+
+        <AuthorizeView Roles="SuperAdmin, Administrator, Moderator, User">                            
+            <Authorized>
+                <li class="nav-item px-3">
+                    <NavLink class="nav-link" href="/content/my" Match="NavLinkMatch.All">
+                        <span class="oi oi-box" aria-hidden="true"></span>My Contents
+                    </NavLink>
+                </li>
+                <li class="nav-item px-3">
+                    <NavLink class="nav-link" href="/content/list/new" Match="NavLinkMatch.All">
+                        <span class="oi oi-plus" aria-hidden="true"></span>New Contents
+                    </NavLink>
+                </li>
+                <li class="nav-item px-3">
+                    <NavLink class="nav-link" href="/content/entry/0" Match="NavLinkMatch.All">
+                        <span class="oi oi-plus" aria-hidden="true"></span>Add New Content
+                    </NavLink>
+                </li>
+            </Authorized>
+        </AuthorizeView>
+
+        @foreach (var m in menus)
+        {
+            var menu = m;
+            <AuthorizeView Roles="@menu.Roles">
+                <Authorized>
+                <!-- Menu toggle -->
+                <li class="nav-item px-2">
+                    <NavLink class="nav-link" style="cursor: pointer;"
+                             @onclick='x => ToggleMenu(menu)'>
+                        <span class="oi oi-list-rich" aria-hidden="true"></span> @menu.Title
+                    </NavLink>
+                </li>
+                @if (menu.Expand)
+                {
+                    <!-- Collapsible sub-menu items -->
+                    foreach (var link in menu.MenuLinks)
+                    {
+                        <li class="nav-item px-4">
+                            <NavLink class="nav-link" href="@link.Item2">
+                                <span class="@link.Item3" aria-hidden="true"></span> @link.Item1
+                            </NavLink>
+                        </li>
+                    }
+                }
+                </Authorized>
+            </AuthorizeView>
+        }
+    </ul>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+    private List<CollapsibleMenu> menus;
+
+
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    protected override void OnInitialized()
+    {
+        var reportsMenu = new CollapsibleMenu("Moderation", "SuperAdmin, Administrator, Moderator");
+        reportsMenu.MenuLinks = new List<Tuple<string, string, string>>()
+        {
+            Tuple.Create("User Registration", "user/approveUser", "oi oi-people"),
+            Tuple.Create("Content Approval", "content/approveContent", "oi oi-list")
+        };
+
+        var adminMenu = new CollapsibleMenu("Administration", "SuperAdmin, Administrator");
+        adminMenu.MenuLinks = new List<Tuple<string, string, string>>()
+        {
+            Tuple.Create("Users", "Identity/Admin/Index", "oi oi-people"),
+            Tuple.Create("Subjects", "list/subject", "oi oi-list"),  
+            Tuple.Create("Grades", "list/grade", "oi oi-list"),  
+            Tuple.Create("Topics", "list/topic", "oi oi-list"),  
+            Tuple.Create("Reports", "manage/reports", "oi oi-spreadsheet")
+        };
+
+        var devMenu = new CollapsibleMenu("dev (Testing purposes)", "SuperAdmin, Administrator");
+        devMenu.MenuLinks = new List<Tuple<string, string, string>>()
+        {
+            Tuple.Create("Users", "Identity/Admin/Index", "oi oi-people"),
+            Tuple.Create("Subjects", "list/subject", "oi oi-list"),  
+            Tuple.Create("Grades", "list/grade", "oi oi-list"),  
+            Tuple.Create("Topics", "list/topic", "oi oi-list"),  
+            Tuple.Create("Content Details", "list/contentDetails", "oi oi-spreadsheet"),  
+            Tuple.Create("Standards", "list/standard", "oi oi-list"),  
+            Tuple.Create("CPL Connections", "list/cplconnection", "oi oi-list")
+        };
+
+        //var mgmtMenu = new CollapsibleMenu("Other Management", "SuperAdmin, Admin, User");
+        //mgmtMenu.MenuLinks = new List<Tuple<string, string, string>>()
+        //{
+        //    Tuple.Create("Other [Example]", "list/other", "oi oi-document")
+        //};
+
+        // Add user menus in display order
+        menus = new List<CollapsibleMenu>();
+        menus.Add(reportsMenu);
+        menus.Add(adminMenu);
+        menus.Add(devMenu);
+        
+        //menus.Add(mgmtMenu);
+    }
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    private void ToggleMenu(CollapsibleMenu menu)
+    {
+        menu.Expand = !menu.Expand;
+        if (menu.Expand)
+        {
+            var menusToCollapse = menus.Where(x => x != menu).ToList();
+            foreach (var m in menusToCollapse)
+            {
+                m.Expand = false;
+            }
+        }
+    }
+
+    public class CollapsibleMenu
+    {
+        public string Title { get; set; }
+        public string Roles { get; set; }
+        public bool Expand { get; set; }
+        public List<Tuple<string, string, string>> MenuLinks { get; set; }
+        public CollapsibleMenu(string title, string roles) { Title = title; Roles = roles; }
+    }
+}

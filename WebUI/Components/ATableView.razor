@@ -1,0 +1,139 @@
+﻿@using BlazorTable
+@using System.Linq.Expressions
+@using WebUI.Factory
+@using WebUI.Data.Interfaces
+
+@inject ServiceFactory _factory
+@inject IMatToaster _toaster
+@inject NavigationManager _navigationManager
+@inject AuthenticationStateProvider _authenticationStateProvider
+
+@typeparam TItem
+@typeparam TService
+
+<AuthorizedFluidContainer Roles="@Roles" AdditionalCSSClasses="@AdditionalCSSClasses">
+    <AuthorizedContent>
+        @if (!ToolbarOneLine)
+        {
+            <div class="row mb-2">
+                <div class="col-12">
+                    <div class="d-flex flex-row align-items-center">
+                        <div class="p-0">
+                            <span class="h3">@Title</span>
+                        </div>
+                        @if (_itemsAreActivable && ShowActiveToggle)
+                        {
+
+                            <div class="p-2">
+                                <div style="margin-top: 0.5em;">
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="@(ControlPrefix)_showActiveCheckbox" @bind="_showActive" />
+                                        <label class="custom-control-label" for="@(ControlPrefix)_showActiveCheckbox">Show Active</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-2">
+                                <div style="margin-top: 0.5em;">
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="@(ControlPrefix)_showInactiveCheckbox" @bind="_showInactive">
+                                        <label class="custom-control-label" for="@(ControlPrefix)_showInactiveCheckbox">Show Inactive</label>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (ToolbarContent != null)
+                        {
+                            <div class="ml-auto">
+                                @ToolbarContent
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="col-12">
+                    @SecondRowToolbar
+                </div>
+
+            </div>
+        }
+
+
+        <div class="table-selectable">
+            <Table TableItem="TItem" Items="@_displayedItems" PageSize="@PageSize" ShowSearchBar="true" ShowChildContentAtTop="true">
+                @ChildContent
+
+                @if (ToolbarOneLine)
+                {
+                    <Pager ShowPageNumber="true" ShowTotalCount="true" AlwaysShow="@AlwaysShow">
+                        <PagerToolbar>
+                            <div class="m-0 d-flex align-items-center">
+                                <div class="p-0">
+                                    <span class="h3">@Title</span>
+                                </div>
+                                @if (_itemsAreActivable && ShowActiveToggle)
+                                {
+
+                                    <div class="p-2">
+                                        <div style="margin-top: 0.5em;">
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input" id="@(ControlPrefix)_showActiveCheckbox" @bind="_showActive" />
+                                                <label class="custom-control-label" for="@(ControlPrefix)_showActiveCheckbox">Show Active</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="p-2">
+                                        <div style="margin-top: 0.5em;">
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input" id="@(ControlPrefix)_showInactiveCheckbox" @bind="_showInactive">
+                                                <label class="custom-control-label" for="@(ControlPrefix)_showInactiveCheckbox">Show Inactive</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+
+                                <div class="ml-auto">
+                                    @ToolbarContent
+                                </div>
+                                @PagerToolbar
+                            </div>
+
+                            <div class="col-12">
+                                @SecondRowToolbar
+                            </div>
+                        </PagerToolbar>
+                    </Pager>
+                }
+                else
+                {
+                    <Pager ShowPageNumber="true" ShowTotalCount="true" AlwaysShow="@AlwaysShow">
+                        <PagerToolbar>
+                            @PagerToolbar
+                        </PagerToolbar>
+                    </Pager>
+                }
+            </Table>
+        </div>
+
+        <!-- Delete confirmation dialog -->
+
+        <MatDialog @bind-IsOpen="@_confDialogIsOpen">
+            <MatDialogContent>
+                <p>@GetConfirmationText()</p>
+            </MatDialogContent>
+            <MatDialogActions>
+                @*<button class="btn btn-danger btn-sm p-1 m-1" type="button" @onclick="Delete">Delete</button>*@
+                <button class="btn btn-outline-secondary btn-sm p-1 m-1" type="button" @onclick="CloseDialog">Cancel</button>
+            </MatDialogActions>
+        </MatDialog>
+
+    </AuthorizedContent>
+    <NotAuthorizedContent>
+        <p>You are not authorized to view this page.</p>
+    </NotAuthorizedContent>
+</AuthorizedFluidContainer>
+
+
+@code {
+
+
+}

@@ -1,0 +1,42 @@
+﻿@page "/content/bookmarks/share/{UID}"
+@using System
+@using System.IO
+@using Microsoft.AspNetCore.Hosting
+@using Microsoft.Extensions.Logging
+@using Newtonsoft.Json
+@using System.Drawing
+@using WebUI.Components
+@using WebUI.Services
+@using WebUI.Data.Models
+@using WebUI.Factory
+@using WebUI.Data
+@using System.Threading
+@using Blazored.Typeahead
+
+@inject AuthenticationStateProvider _authenticationStateProvider
+@inject ServiceFactory _factory
+@inject IMatToaster _toaster
+@inject IWebHostEnvironment Environment
+@inject System.Net.Http.HttpClient HttpClient
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject NavigationManager NavManager
+
+
+@if (_bookmarks != null)
+{
+    <div class="container-fluid">
+        <strong>Bookmarked Items Shared: @_bookmarks.Count</strong>
+        <br/>
+        @foreach (var b in _bookmarks)
+        {
+            <p>
+                <a href="/content/view/@b.ContentDetailsId" target="_blank">
+                    @b.ContentDetails.Title
+                </a>
+                <br />
+                @b.ContentDetails.SummaryTwoSentences
+            </p>
+        }
+    </div>
+}

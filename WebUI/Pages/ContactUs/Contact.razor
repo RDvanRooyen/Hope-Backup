@@ -1,0 +1,220 @@
+﻿@page "/contact/{Category}"
+@using Microsoft.AspNetCore.Identity.UI.Services
+@using WebUI.Components
+@using WebUI.Factory
+@using WebUI.Components.Forms
+@using WebUI.Services
+
+@inject AuthenticationStateProvider _authenticationStateProvider
+@inject ServiceFactory _factory
+
+@if (Category == NewContact)
+{
+    <div class="text-center">
+        <div class="container" style="width:500px">
+            <h1>Contact Us.</h1>
+            <a>Have a question? We would like to hear from you.<br />
+                Please fill in the form bellow and we will be in contact with you as soon as poosible!<br />
+            </a>
+            <label class="form-text float-left">Name*</label>
+            @if (string.IsNullOrEmpty(@Name))
+            {
+                <small class="form-text text-danger float-right">Required Field</small>
+            }
+            <input type="text" class="form-control form-control-sm" @bind="@Name" />
+
+            <label class="form-text float-left">Surname*</label>
+            @if (string.IsNullOrEmpty(@Surname))
+            {
+                <small class="form-text text-danger float-right">Required Field</small>
+            }
+            <input type="text" class="form-control form-control-sm" @bind="@Surname" />
+
+            <label class="form-text float-left">Email*</label>
+            @if (string.IsNullOrEmpty(@Email))
+            {
+                <small class="form-text text-danger float-right">Required Field</small>
+            }
+            <input type="text" class="form-control form-control-sm" @bind="@Email" />
+
+            <label class="form-text float-left">Message*</label>
+            @if (string.IsNullOrEmpty(UserMessage))
+            {
+                <small class="form-text text-danger float-right">Required Field</small>
+            }
+            <textarea rows="7" type="text" class="form-control form-control-sm" @bind="@UserMessage"></textarea>
+            <br />
+            <ActionButton Action="plain" IsTextButton="true" MinimizePadding="false" OnClick="ContactUs" ButtonText="Contact Us"/>
+
+            <MatDialog @bind-IsOpen="@_validDialogIsOpen">
+                <MatDialogContent>
+                    <div class="row">
+                        <div class="col">
+                            <p class="pt-1">@($"Hello {@Name} {@Surname}, thank you for contacting us we have sent you an email and and we will contact you shortly")</p>
+                        </div>
+                    </div>
+                </MatDialogContent>
+                <MatDialogActions>
+                    <button class="btn btn-sm btn-primary btn-sm p-1 m-1" type="button" @onclick="CloseValidDialog">Ok</button>
+                </MatDialogActions>
+            </MatDialog>
+            <MatDialog @bind-IsOpen="@_invalidDialogIsOpen">
+                <MatDialogContent>
+                    <div class="row">
+                        <div class="col">
+                            <p class="pt-1">@($"Hello {@Name} {@Surname}, please make sure you have filled in all the required fields.")</p>
+                        </div>
+                    </div>
+                </MatDialogContent>
+                <MatDialogActions>
+                    <button class="btn btn-sm btn-primary btn-sm p-1 m-1" type="button" @onclick="CloseInvalidDialog">Ok</button>
+                </MatDialogActions>
+            </MatDialog>
+
+
+        </div>
+    </div>
+}
+
+@if (Category == ViewContact)
+{
+    <h3 class="mb-5">Contact Us</h3>
+    <div class="row m-0">
+        <div class="col-md-12 p-0">
+            <div class="mb-4">
+                <ATableView TItem="ContactUs"
+                            AllItems="_viewContactUs"
+                            UseAllItems=true
+                            TService="ServiceBase"
+                            Roles="SuperAdmin, Admin"
+                            IdField="@(x => x.Id)"
+                            EditIdField="@(x => x.Id)"
+                            IdFieldFilter="@(x=>x.Id== 0)"
+                            NameField="@(x => x.Name)"
+                            Title=""
+                            ShowActiveToggle="false"
+                            AdditionalCSSClasses="m-0 p-0">
+                                                
+                    <PagerToolbar>
+                        <h5>Contact Requests</h5>
+                    </PagerToolbar>
+                    <ChildContent>
+
+                        <MgmtTableCol TItem="ContactUs" Title="Title" Field="@(x=>x.Id)" Filterable="false" Width="400px">
+                            <Template>
+                                <a href="/contact/respond/@context.Id" class="mr-1" title="click to respond"><i class="fas fa-reply"></i>
+                                    @context.Name Contact    
+                                </a>
+                            </Template>
+                        </MgmtTableCol>
+                        <MgmtTableCol TItem="ContactUs" Title="Contacter" Field="@(x=>x.Name)" Width="400px">
+                            <Template>
+                                @context.Name @context.Surname
+                            </Template>
+                        </MgmtTableCol>
+                        <MgmtTableCol TItem="ContactUs" Title="Email" Field="@(x=>x.Email)">
+                            <Template>
+                                @context.Email
+                            </Template>
+                        </MgmtTableCol>
+                        <MgmtTableCol TItem="ContactUs" Title="Message" Field="@(x=>x.Message)">
+                            <Template>
+                                @context.Message
+                            </Template>
+                        </MgmtTableCol>
+                        <MgmtTableCol TItem="ContactUs" Title="Date Contacted" Field="@(x=>x.AddedDate)">
+                            <Template>
+                                @context.AddedDate.ToShortDateString()
+                            </Template>
+                        </MgmtTableCol>
+                    </ChildContent>
+                </ATableView>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public string Category { get; set; }
+
+    private const string NewContact = "new";
+    private const string ViewContact = "view";
+
+    public string Name { get; set; }
+    public string Surname { get; set; }
+    public string Email { get; set; }
+    public string UserMessage { get; set; }
+    public string ResponseMessage { get; set; }
+
+    public ContactUs contactUs = new ContactUs();
+    List<ContactUs> _viewContactUs = new();
+
+    private readonly IEmailSender _emailSender;
+
+    private bool _validDialogIsOpen;
+    private bool _invalidDialogIsOpen;
+    
+    ServiceBase Service { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Service = await _factory.CreateService<ServiceBase>(_authenticationStateProvider);
+    }
+    protected override async Task OnParametersSetAsync()
+    {
+        _viewContactUs = new();
+
+        if (Category == ViewContact)
+        {
+            _viewContactUs = await Service.GetContext().ContactUsRecords
+                .Where(x => x.Responded == false)
+                .OrderByDescending(x => x.AddedDate)
+                .ToListAsync();
+        }
+    }
+
+    async Task ContactUs()
+    {
+        ResponseMessage = string.Empty;
+        if (Name != null && Surname != null && Email != null && UserMessage != null)
+        {
+            contactUs.Name = Name;
+            contactUs.Surname = Surname;
+            contactUs.Email = Email;
+            contactUs.Message = UserMessage;
+            contactUs.AddedDate = DateTime.Now;
+
+            Service.GetContext().ContactUsRecords.Add(contactUs);
+            Service.GetContext().SaveChanges();
+
+            //await _emailSender.SendEmailAsync(Email, "Contact Us automated response", ResponseMessage);
+
+            ResponseMessage = string.Join("Hi ", Name, " We are glad to hear from you and will get in contact with you shortly regarding your message: (\"", UserMessage, "\") That was sent on ", DateTime.Now.ToShortDateString(), ".\n\nPlease note this is an automated reply.");
+
+            StateHasChanged();
+            OpenValidDialog();
+        }
+        else
+        {            
+            OpenInvalidDialog();
+        }
+    }
+    private void OpenValidDialog()
+    {
+        _validDialogIsOpen = true;
+    }
+    private void CloseValidDialog()
+    {
+        _validDialogIsOpen = false;
+    }
+    private void OpenInvalidDialog()
+    {
+        _invalidDialogIsOpen = true;
+    }
+    private void CloseInvalidDialog()
+    {
+        _invalidDialogIsOpen = false;
+    }
+}

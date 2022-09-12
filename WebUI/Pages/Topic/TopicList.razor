@@ -1,0 +1,72 @@
+﻿@page "/list/topic"
+@using WebUI.Components
+@using WebUI.Components.Forms
+@using WebUI.Factory
+@using BlazorTable
+@using WebUI.ViewModels
+@using WebUI.Components.Abstract
+@using WebUI.Services
+@using WebUI.Data
+
+
+@inject AuthenticationStateProvider _authenticationStateProvider
+@inject ServiceFactory _factory
+@inject IMatToaster _toaster
+@inject System.Net.Http.HttpClient HttpClient
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject NavigationManager NavManager
+
+<div class="row m-0">
+    <div class="col-md-12 p-0">
+        <div class="mb-4">
+            <ATableView TItem="Topic"
+                        AllItems="_topics"
+                        UseAllItems=true
+                        TService="ServiceBase"
+                        Roles="SuperAdmin, Admin, Moderator"
+                        IdField="@(x => x.Id)"
+                        EditIdField="@(x => x.Id)"
+                        IdFieldFilter="@(x=>x.Id== 0)"
+                        NameField="@(x => x.Title)"
+                        Title=""
+                        ShowActiveToggle="false"
+                        AdditionalCSSClasses="m-0 p-0">
+
+                <ToolbarContent>
+                </ToolbarContent>
+                <PagerToolbar>
+                    <h4>Topics</h4>
+
+                    <a class="btn btn-sm btn-info m-2" href="/manage/topic/0" >Add New</a>
+                </PagerToolbar>
+                <ChildContent>
+
+                    <MgmtTableCol TItem="Topic" Title="ID" Field="@(x=>x.Id)" Width="100px" />
+                    <MgmtTableCol TItem="Topic" Title="Title" Field="@(x=>x.Title)" Width="120px" />
+                    <MgmtTableCol TItem="Topic" Title="Approved" Field="@(x=>x.Approved)" />
+                    <MgmtTableCol TItem="Topic" Title="Action" Field="@(x=>x.Id)" Width="250px">
+                        <Template>
+                            <button class="btn btn-sm btn-danger mr-1" @onclick="@(()=> { DeleteItem(context); })">Delete</button>
+                            <a class="btn btn-sm btn-outline-info mr-1" href="/manage/topic/@context.Id">Edit</a>
+                            @if (!context.Approved)
+                            {
+                                <button class="btn btn-sm btn-success mr-1" @onclick="@(()=> { ApproveItem(context); })">Approve</button>
+                            }
+
+                        </Template>
+                    </MgmtTableCol>
+                </ChildContent>
+            </ATableView>
+        </div>
+    </div>
+</div>
+@*<ManagementListPage TItem="Topic"
+                    TService="ServiceBase"
+                    Title="Topics"
+                    IdField="@(x => x.Id)"
+                    NameField="@(x => x.Title)"
+                    ManagePath="topic">
+
+</ManagementListPage>*@
+

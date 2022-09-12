@@ -1,0 +1,193 @@
+﻿@page "/moderation/contents"
+@using WebUI.Components
+@using WebUI.Components.Forms
+@using WebUI.Factory
+@using BlazorTable
+@using WebUI.ViewModels
+@using WebUI.Components.Abstract
+@using WebUI.Services
+@using Microsoft.AspNetCore.Hosting
+@using WebUI.Data
+
+
+@inject AuthenticationStateProvider _authenticationStateProvider
+@inject ServiceFactory _factory
+@inject IMatToaster _toaster
+@inject IWebHostEnvironment Environment
+@inject System.Net.Http.HttpClient HttpClient
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject NavigationManager NavManager
+
+<div class="row m-0">
+    <div class="col-md-12 p-0">
+        <div class="mb-4">
+            <ATableView TItem="ContentDetails"
+                        AllItems="_contents"
+                        UseAllItems=true
+                        TService="ServiceBase"
+                        Roles="SuperAdmin, Admin, Moderator"
+                        IdField="@(x => x.Id)"
+                        EditIdField="@(x => x.Id)"
+                        IdFieldFilter="@(x=>x.Id== 0)"
+                        NameField="@(x => x.Title)"
+                        Title=""
+                        ShowActiveToggle="false"
+                        AdditionalCSSClasses="m-0 p-0">
+
+                <ToolbarContent>
+                </ToolbarContent>
+                <PagerToolbar>
+                    <h4>Waiting for Approval</h4>
+                </PagerToolbar>
+                <ChildContent>
+
+                    <MgmtTableCol TItem="ContentDetails" Title="Last Name" Field="@(x=>x.CreatedBy.LastName)" Width="120px" />
+                    <MgmtTableCol TItem="ContentDetails" Title="First Name" Field="@(x=>x.CreatedBy.FirstName)" Width="120px" />
+                    <MgmtTableCol TItem="ContentDetails" Title="Subject" Field="@(x=>x.SubjectsText)" />
+                    <MgmtTableCol TItem="ContentDetails" Title="Grade" Field="@(x=>x.GradesText)" Width="200px" />
+                    <MgmtTableCol TItem="ContentDetails" Title="Submission " Field="@(x=>x.SubmittedDateSortable)" Width="150px">
+                        <Template>
+                            @context.SubmittedDateString
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentDetails" Title="Moderator Comments" Field="@(x=>x.ModeratorCommentString)" Width="300px" />
+                    <MgmtTableCol TItem="ContentDetails" Title="Action" Field="@(x=>x.Id)" Width="100px">
+                        <Template>
+                            <a href="/moderation/content/@context.Id" class="btn btn-sm btn-info">Details</a>
+                        </Template>
+                    </MgmtTableCol>
+                </ChildContent>
+            </ATableView>
+        </div>
+        <div class="mb-4">
+            <ATableView TItem="ContentDetails"
+                        AllItems="_approvedContents"
+                        UseAllItems=true
+                        TService="ServiceBase"
+                        Roles="SuperAdmin, Admin, Moderator"
+                        IdField="@(x => x.Id)"
+                        EditIdField="@(x => x.Id)"
+                        IdFieldFilter="@(x=>x.Id== 0)"
+                        NameField="@(x => x.Title)"
+                        Title=""
+                        ShowActiveToggle="false"
+                        AdditionalCSSClasses="m-0 p-0">
+
+                <ToolbarContent>
+                </ToolbarContent>
+                <PagerToolbar>
+                    <h4>Approved List</h4>
+                </PagerToolbar>
+                <ChildContent>
+
+                    <MgmtTableCol TItem="ContentDetails" Title="Last Name" Field="@(x=>x.CreatedBy.LastName)" Width="120px" />
+                    <MgmtTableCol TItem="ContentDetails" Title="First Name" Field="@(x=>x.CreatedBy.FirstName)" Width="120px" />
+                    <MgmtTableCol TItem="ContentDetails" Title="Subject" Field="@(x=>x.SubjectsText)" />
+                    <MgmtTableCol TItem="ContentDetails" Title="Grade" Field="@(x=>x.GradesText)" Width="200px" />
+                    <MgmtTableCol TItem="ContentDetails" Title="Submission " Field="@(x=>x.SubmittedDateSortable)" Width="150px">
+                        <Template>
+                            @context.SubmittedDateString
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentDetails" Title="Approved " Field="@(x=>x.ApprovedDateSortable)" Width="150px">
+                        <Template>
+                            @context.ApprovedDateString
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentDetails" Title="Moderator Comments" Field="@(x=>x.ModeratorCommentString)" Width="300px" />
+                    <MgmtTableCol TItem="ContentDetails" Title="Action" Field="@(x=>x.Id)" Width="100px">
+                        <Template>
+                            <a href="/moderation/content/@context.Id" class="btn btn-sm btn-info">Details</a>
+                        </Template>
+                    </MgmtTableCol>
+                </ChildContent>
+            </ATableView>
+        </div>
+
+        <div class="mb-4">
+            <ATableView TItem="ContentDetails"
+                        AllItems="_rejectedContents"
+                        UseAllItems=true
+                        TService="ServiceBase"
+                        Roles="SuperAdmin, Admin, Moderator"
+                        IdField="@(x => x.Id)"
+                        EditIdField="@(x => x.Id)"
+                        IdFieldFilter="@(x=>x.Id== 0)"
+                        NameField="@(x => x.Title)"
+                        Title=""
+                        ShowActiveToggle="false"
+                        AdditionalCSSClasses="m-0 p-0">
+
+                <ToolbarContent>
+                </ToolbarContent>
+                <PagerToolbar>
+                    <h4>Rejected List</h4>
+                </PagerToolbar>
+                <ChildContent>
+
+                    <MgmtTableCol TItem="ContentDetails" Title="Last Name" Field="@(x=>x.CreatedBy.LastName)" Width="120px" />
+                    <MgmtTableCol TItem="ContentDetails" Title="First Name" Field="@(x=>x.CreatedBy.FirstName)" Width="120px" />
+                    <MgmtTableCol TItem="ContentDetails" Title="Subject" Field="@(x=>x.SubjectsText)" />
+                    <MgmtTableCol TItem="ContentDetails" Title="Grade" Field="@(x=>x.GradesText)" Width="200px" />
+                    <MgmtTableCol TItem="ContentDetails" Title="Submission " Field="@(x=>x.SubmittedDateSortable)" Width="150px">
+                        <Template>
+                            @context.SubmittedDateString
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentDetails" Title="Rejected " Field="@(x=>x.RejectionDateTime)" Width="150px">
+                        <Template>
+                            @context.RejectionDateTime.ToHumanDateOnly()
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentDetails" Title="Rejection Reason" Field="@(x=>x.RejectionReason)" Width="300px" />
+                    <MgmtTableCol TItem="ContentDetails" Title="Action" Field="@(x=>x.Id)" Width="100px">
+                        <Template>
+                            <a href="/moderation/content/@context.Id" class="btn btn-sm btn-info">Details</a>
+                        </Template>
+                    </MgmtTableCol>
+                </ChildContent>
+            </ATableView>
+        </div>
+
+        <div class="mb-4">
+            <ATableView TItem="ContentDetails"
+                        AllItems="_archivedContents"
+                        UseAllItems=true
+                        TService="ServiceBase"
+                        Roles="SuperAdmin, Admin, Moderator"
+                        IdField="@(x => x.Id)"
+                        EditIdField="@(x => x.Id)"
+                        IdFieldFilter="@(x=>x.Id== 0)"
+                        NameField="@(x => x.Title)"
+                        Title=""
+                        ShowActiveToggle="false"
+                        AdditionalCSSClasses="m-0 p-0">
+
+                <ToolbarContent>
+                </ToolbarContent>
+                <PagerToolbar>
+                    <h4>Editing List</h4>
+                </PagerToolbar>
+                <ChildContent>
+
+                    <MgmtTableCol TItem="ContentDetails" Title="Last Name" Field="@(x=>x.CreatedBy.LastName)" Width="120px" />
+                    <MgmtTableCol TItem="ContentDetails" Title="First Name" Field="@(x=>x.CreatedBy.FirstName)" Width="120px" />
+                    <MgmtTableCol TItem="ContentDetails" Title="Subject" Field="@(x=>x.SubjectsText)" />
+                    <MgmtTableCol TItem="ContentDetails" Title="Grade" Field="@(x=>x.GradesText)" Width="200px" />
+                    <MgmtTableCol TItem="ContentDetails" Title="Submission " Field="@(x=>x.SubmittedDateSortable)" Width="150px">
+                        <Template>
+                            @context.SubmittedDateString
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentDetails" Title="Status " Field="@(x=>x.Status)" Width="150px" /> 
+                    <MgmtTableCol TItem="ContentDetails" Title="Action" Field="@(x=>x.Id)" Width="100px">
+                        <Template>
+                            @*<a href="/moderation/content/@context.Id" class="btn btn-sm btn-info" >Details</a>*@
+                        </Template>
+                    </MgmtTableCol>
+                </ChildContent>
+            </ATableView>
+        </div>
+    </div>
+</div>

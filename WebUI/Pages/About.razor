@@ -1,0 +1,62 @@
+﻿@page "/about"
+
+@using WebUI.Factory
+@using Microsoft.Extensions.Configuration
+@using WebUI.Services
+
+@inject AuthenticationStateProvider _authenticationStateProvider
+@inject ServiceFactory _factory
+
+
+<style>
+    body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background-image: url('images/HOPE_logo_color_sm-greyblur.png');
+        background-repeat: no-repeat;
+        background-size: cover;
+    } 
+</style>
+<div class="container">
+    <div class="text-center">
+        <h1>About Us</h1>
+        <p>The Hawaii Online Portal for Education is a curriculum and professional development project to gather and create a community of
+            practice and collection of free and accessible digital content for Hawaiʻi students that is Hawaiʻi-authored, Hawaiʻi-specific,
+            Hawaiʻi-grounded, and Hawaiʻi-serving. HOPE is funded to focus solely on digital content, pedagogical practices, and curriculum
+            created by Hawaiʻi teachers, for Hawaiʻi.</p>
+    </div>
+    <div class="text-center">
+        <p>We offer a variety consisting of <strong>@_noContents Contents</strong> accross <strong>@_noGrades Grades</strong>
+            and <strong>@_noSubjects Subjects</strong>.</p>
+    </div>
+</div>
+
+@code{
+
+    [Inject]
+    public IConfiguration Configuration { get; set; }
+    [CascadingParameter(Name = "MainLayout")]
+    public MainLayout MainLayout { get; set; }
+    ServiceBase Service { get; set; }
+
+    private List<Data.Models.ContentDetails> _contents;
+    private List<Data.Models.Subject> _subjects;
+    private List<Data.Models.Grade> _grades;
+    private int _noContents;
+    private int _noSubjects;
+    private int _noGrades;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Service = await _factory.CreateService<ServiceBase>(_authenticationStateProvider);        
+
+        _contents = Service.GetContext().ContentDetails.OrderBy(x => x.Id).ToList();
+        _subjects = Service.GetContext().Subjects.OrderBy(x => x.Id).ToList();
+        _grades = Service.GetContext().Grades.OrderBy(x => x.Id).ToList();
+
+        _noContents = _contents.Count();
+        _noSubjects = _subjects.Count();
+        _noGrades = _grades.Count();
+    }
+}

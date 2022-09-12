@@ -1,0 +1,13 @@
+﻿@page "/list/subject"
+@using WebUI.Components
+@using WebUI.Services
+
+<ManagementListPage TItem="Subject"
+                    TService="ServiceBase"
+                    Title="Subjects"
+                    IdField="@(x => x.Id)"
+                    NameField="@(x => x.Title)"
+                    ManagePath="subject">                
+                    
+</ManagementListPage>
+

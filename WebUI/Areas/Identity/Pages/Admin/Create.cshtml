@@ -1,0 +1,138 @@
+﻿@page
+@using WebUI.Data.Enums
+@using WebUI.Data.Models
+@model WebUI.Areas.Identity.Pages.Admin.CreateModel
+@{
+    ViewData["Title"] = "Create User";
+
+}
+
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+<!-- JS & CSS library of MultiSelect plugin -->
+<script src="https://phpcoder.tech/multiselect/js/jquery.multiselect.js"></script>
+<link rel="stylesheet" href="https://phpcoder.tech/multiselect/css/jquery.multiselect.css">
+
+<style>
+    ul {
+        list-style-type: none;
+        padding-left: 0px;
+    }
+</style>
+
+<div class="row">
+    <div class="col-md-4">
+
+        <form asp-route-returnUrl="@Model.ReturnUrl" method="post">
+            @*<div asp-validation-summary="All" class="text-danger"></div>*@            
+            
+            @*FirstName*@
+            <div class="form-group">
+                <label asp-for="Input.FirstName"></label>
+                <input asp-for="Input.FirstName" class="form-control" />
+                <span asp-validation-for="Input.FirstName" class="text-danger"></span>
+            </div>   
+            
+            @*LastName*@
+            <div class="form-group">
+                <label asp-for="Input.LastName"></label>
+                <input asp-for="Input.LastName" class="form-control" />
+                <span asp-validation-for="Input.LastName" class="text-danger"></span>
+            </div>
+
+            @*Email*@
+            <div class="form-group">
+                <label asp-for="Input.Email"></label>
+                <input asp-for="Input.Email" class="form-control" />
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+
+            @*Password*@
+            <div class="form-group">
+                <label asp-for="Input.Password"></label>
+                <input asp-for="Input.Password" class="form-control" />
+                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            </div>
+
+            @*ConfirmPassword*@
+            <div class="form-group">
+                <label asp-for="Input.ConfirmPassword"></label>
+                <input asp-for="Input.ConfirmPassword" class="form-control" />
+                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+            </div>    
+            
+            @*School*@
+            <div class="form-group">
+                <label asp-for="Input.School"></label>
+                <input asp-for="Input.School" class="form-control" />
+                <span asp-validation-for="Input.School" class="text-danger"></span>
+            </div>
+
+            @*Grades*@            
+            <div class="form-group">
+                <label  asp-for="SelectedGrades">Grade*</label>
+                <select name="SelectedGrades[]" asp-for="SelectedGrades" asp-items="Model.GradesList" class="form-control" multiple>               
+                </select>
+                <span asp-validation-for="SelectedGrades" class="text-danger"></span>
+            </div>
+
+            @*Grades*@            
+            <div class="form-group">
+                <label  asp-for="SelectedSubjects">Interests/Subjects</label>
+                <select name="SelectedSubjects[]" asp-for="SelectedSubjects" asp-items="Model.SubjectsList" class="form-control" multiple>               
+                </select>
+                <span asp-validation-for="SelectedSubjects" class="text-danger"></span>
+            </div>
+
+            @*Status*@
+            <div class="form-group">
+                <label asp-for="Input.Status"></label>
+                <select asp-for="Input.Status" class="form-control">
+                    <option value="Submitted_Pending" selected>Submitted Pending</option>
+                    @{
+                        foreach (Status status in Enum.GetValues(typeof(Status)))
+                        {
+                            <option value="@status">@status.ToLabel()</option>
+                        }
+                    }
+                </select>                
+            </div>
+
+            @*RoleName*@
+            <div class="form-group">
+                <label asp-for="Input.RoleName"></label>
+                <select asp-for="Input.RoleName" class="form-control">
+                    <option value="User" selected>User</option>
+                    @{
+                        foreach (var role in Model.Roles)
+                        {
+                            <option value="@role.Name">@role.Name</option>
+                        }
+                    }
+                </select>
+                <span asp-validation-for="Input.RoleName" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">Create</button>
+        </form>
+        <div class="mt-2 pt-2">
+            <a href="/Identity/Admin/">Return to List</a>
+        </div>
+        <br/>
+        <br/>
+        <br/>
+    </div>
+</div>
+<script>
+    $('select[multiple]').multiselect({
+        columns  : 1,
+
+    });
+</script>
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+}

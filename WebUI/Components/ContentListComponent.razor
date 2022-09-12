@@ -1,0 +1,251 @@
+﻿@using WebUI.Components
+@using WebUI.Factory
+@using BlazorTable
+@using WebUI.ViewModels
+@using WebUI.Components.Abstract
+@using WebUI.Services
+@using Microsoft.AspNetCore.Hosting
+
+@inject AuthenticationStateProvider _authenticationStateProvider
+@inject ServiceFactory _factory
+@inject IMatToaster _toaster
+@inject IWebHostEnvironment Environment
+@inject System.Net.Http.HttpClient HttpClient
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject NavigationManager NavManager 
+
+
+@if (ContentCategory == ContentNew)
+{
+    <h3 class="mb-5">New Content</h3>
+    @foreach (var s in _subjects)
+    {
+        var list = _newContentsDictionary[s.Id];
+        if (list.Any())
+        {
+            <h5>@s.Title <a href="" class="badge badge-info" style="font-size: 0.6em;">See All</a></h5>
+            <div class="row m-0 mb-5">
+                @foreach (var d in list)
+                {
+                    <ContentDetailsThumbnailComponent ContentDetails="d" />
+                }
+            </div>
+        }
+    }
+}
+@if (ContentCategory == ContentSearch)
+{
+    <div class="container-fluid">
+        <div class="text-center mx-5">
+            <h1>Look to the past to inform the future</h1>
+            <p>he Hawaii Online Portal for Education is a curriculum and professional development project to gather and create a community of practice and collection of free and accessible digital content for Hawaiʻi students that is Hawaiʻi-authored, Hawaiʻi-specific, Hawaiʻi-grounded, and Hawaiʻi-serving. HOPE is funded to focus solely on digital content, pedagogical practices, and curriculum created by Hawaiʻi teachers, for Hawaiʻi.</p>
+        </div>
+        <div class="d-flex justify-content-center">
+            <div class="p-2 bd-highlight">
+                <input type="text" class="form-control form-control-lg search-control"
+                       placeholder="What are you looking for?" @bind="SearchKeyword" />
+            </div>
+            <div class="p-2 bd-highlight">
+                <select @bind="SelectedSubject" class="form-control form-control-lg search-control">
+                    <option value="" selected>Subject</option>
+                    @foreach (var s in _subjects)
+                    {
+                        <option value="@s.Id">@s.Title</option>
+                    }
+                </select>
+            </div>
+            <div class="p-2 bd-highlight">
+                <select @bind="SelectedGrade" class="form-control form-control-lg search-control">
+                    <option value="" selected>Grade</option>
+                    @foreach (var s in _grades)
+                    {
+                        <option value="@s.Id">@s.Title</option>
+                    }
+                </select>
+            </div>
+            <div class="p-2 bd-highlight">
+                <button class="btn btn-lg btn-info" @onclick="SearchForContent">Search</button>
+            </div>
+        </div>
+    </div>
+    @if (_featuredList != null && _featuredList.Any())
+    {
+        <div class="mt-5">
+            <h5>Featured Content <a href="" class="badge badge-info" style="font-size: 0.6em;">See All</a></h5>
+            <div class="row m-0 mb-5">
+                @foreach (var d in _featuredList)
+                {
+                    <ContentDetailsThumbnailComponent ContentDetails="d" />
+                }
+            </div>
+        </div>
+
+    }
+    @if (_newContents != null && _newContents.Any())
+    {
+        <div class="mt-5">
+            <h5>New Content <a href="" class="badge badge-info" style="font-size: 0.6em;">See All</a></h5>
+            <div class="row m-0 mb-5">
+                @foreach (var d in _newContents)
+                {
+                    <ContentDetailsThumbnailComponent ContentDetails="d" />
+                }
+            </div>
+        </div>
+
+    }
+
+}
+@if (ContentCategory == ContentSearchResult)
+{
+    <div class="container-fluid">
+        <h3>
+            Search Results [Found: @_totalFound]
+        </h3>
+        <div class="d-flex flex-row bd-highlight mb-3">
+            <div class="p-2 bd-highlight">
+                <button class="btn btn-sm btn-outline-info"
+                        title="Show/Hide Filter" @onclick="ShowFilterDrawer">
+                    <i class="fas fa-filter"></i>
+                </button>
+            </div>
+            <div class="p-2 bd-highlight">
+                <select class="form-control form-control-sm"  title="Sort By" @onchange="SortByChangedAsync">
+                    @foreach (var opt in SortByOptions)
+                    {
+                        <option selected="@(opt==SelectedSortBy)">@opt</option>
+                    }
+                </select>
+            </div>
+            <div class="p-2 flex-fill">
+                <input type="text" class="form-control form-control-sm"
+                       placeholder="What are you looking for?" @bind="SearchKeyword" />
+            </div>
+            <div class="p-2 bd-highlight">
+                @if (_isSearchLoading)
+                {
+                    <button class="btn btn-sm btn-info" disabled><div class="spinner-border" style="height: 16px; width: 16px;"></div> Search</button>
+                }
+                else
+                {
+                    <button class="btn btn-sm btn-info" @onclick="ApplyFilter"> Search</button>
+                }
+            </div>
+            <div class="p-2 bd-highlight">
+                <button disabled="@_isSearchLoading" class="btn btn-sm btn-outline-@(ShowAsGrid?"info":"secondary")" title="View as Grid" @onclick="SearchAsGrid"><i class="fas fa-th"></i></button>
+
+                <button disabled="@_isSearchLoading" class="btn btn-sm btn-outline-@(ShowAsGrid?"secondary":"info")" title="View as List" @onclick="SearchAsList"><i class="fas fa-list"></i></button>
+            </div>
+        </div>
+
+        <div class="d-flex bd-highlight">
+            @if (_filterDrawerShow)
+            {
+                <div class="p-2">
+                    <div class="alert alert-info p-3" style="width: 250px;">
+                        <div class="p-0 col-12">
+                            <div class="d-flex ">
+                                <div class="p-1 flex-fill"><button class="btn btn-sm btn-success btn-block" @onclick="ApplyFilter" disabled="@(_isSearchLoading || !HasFilter)" title="Apply filter"><i class="fas fa-filter"></i> Apply </button></div>
+                                <div class="p-1 flex-fill"><button class="btn btn-sm btn-success btn-block" @onclick="ClearFilter" disabled="@(_isSearchLoading || !HasFilter)" title="Clear filter"><i class="fas fa-backspace"></i> Clear </button></div>
+                            </div>
+
+
+                            <hr />
+                            <strong>0 Resource Matches</strong>
+                            <hr />
+                            <div class="form-group">
+                                <strong>Grade* <span class="badge badge-pill badge-info">?</span></strong>
+                                <br />
+                                @foreach (var g in _grades)
+                                {
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="" id="@($"grade{g.Id}")" @bind="g.Checked">
+                                        <label class="form-check-label" for="@($"grade{g.Id}")">
+                                            @g.Title
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                            <hr />
+                            <div class="form-group">
+                                <strong>Subjects* <span class="badge badge-pill badge-info">?</span></strong>
+                                <br />
+                                @foreach (var g in _subjects.OrderBy(x=>x.Title))
+                                {
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="" id="@($"subject{g.Id}")" @bind="g.Checked">
+                                        <label class="form-check-label" for="@($"subject{g.Id}")">
+                                            @g.Title
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            }
+            <div class="p-2 flex-fill bd-highlight">
+                <div class="d-flex flex-row bd-highlight mb-3">
+                    @if (!string.IsNullOrEmpty(SearchKeyword))
+                    {
+                        <button class="btn btn-sm btn-outline-info mr-1" @onclick="() => { SearchKeyword = null; }"><i class="fas fa-times-circle"></i> @SearchKeyword</button>
+                    }
+                    @foreach (var g in _grades)
+                    {
+                        if (g.Checked ?? false)
+                        {
+                            <button class="btn btn-sm btn-outline-info mr-1" @onclick="() => { g.Checked =false; }"><i class="fas fa-times-circle"></i> @g.Title</button>
+                        }
+                    }
+                    @foreach (var g in _subjects)
+                    {
+                        if (g.Checked ?? false)
+                        {
+                            <button class="btn btn-sm btn-outline-info mr-1" @onclick="() => { g.Checked =false; }"><i class="fas fa-times-circle"></i> @g.Title</button>
+                        }
+                    }
+                </div>
+
+                <div class="row m-0 mb-5">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <span class="mx-1">Display</span>
+                        <select class="form-control form-control-sm mx-1" disabled="@_isSearchLoading" @onchange="PageSizeChangedAsync">
+                            @foreach (var p in PageSizes)
+                            {
+                                <option value="@p" selected="@(p==_pageSize)">@p</option>
+                            }
+                        </select>
+
+                        <button disabled="@_isSearchLoading" type="button" class="btn btn-sm btn-outline-info mx-1">Previous</button>
+                        <div class="btn-group mx-1" role="group" aria-label="Basic example">
+                            <button disabled="@_isSearchLoading" type="button" class="btn btn-sm btn-outline-info" @onclick="async ()=> { await ShowPageAsync(1); }">First</button>
+                            @for (var i = 0; i < _pageCount; i++)
+                            {
+                                var pageNumber = (i + 1);
+                                <button disabled="@_isSearchLoading" type="button"
+                                        class="btn btn-sm @((_page+1) == pageNumber?"btn-info":"btn-outline-info")"
+                                        @onclick="async ()=> { await ShowPageAsync(pageNumber); }">
+                                    @pageNumber
+                                    </button>
+                                }
+                            <button disabled="@_isSearchLoading" type="button" class="btn btn-sm btn-outline-info" @onclick="async ()=> { await ShowPageAsync(_pageCount); }">Last</button>
+                        </div>
+                        <button disabled="@_isSearchLoading" type="button" class="btn btn-sm btn-outline-info mx-1">Next</button>
+                    </div>
+                </div>
+                <div class="row m-0 mb-5">
+                    @foreach (var d in _searchResult)
+                    {
+                        var css = "search-photo";
+                        <ContentDetailsThumbnailSearchComponent ContentDetails="@d" PhotoCardCSSClass="@css" IsGrid="ShowAsGrid" />
+                    }
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+}

@@ -1,0 +1,26 @@
+﻿@page "/{Category}"
+
+@if (Category== "PrivacyPolicy")
+{
+    <div class="text-center">
+        <div class="container" style="width:500px">
+            <h1><i class="fa fa-shield-alt" aria-hidden="true"></i><br>Privacy Policy.</h1>
+            <a>Privacy Policy text to be added here.</a>
+        </div>
+    </div>
+}
+
+@if (Category== "TermsConditions")
+{
+    <div class="text-center">
+        <div class="container" style="width:500px">
+            <h1><i class="fa fa-gavel" aria-hidden="true"></i><br>Terms and Conditions.</h1>
+            <a>Terms and Conditions text to be added here.</a>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string Category { get; set; }
+}

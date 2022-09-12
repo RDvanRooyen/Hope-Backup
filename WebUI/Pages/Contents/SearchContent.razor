@@ -1,0 +1,77 @@
+﻿@page "/content/search"
+@using WebUI.Components
+@using WebUI.Factory
+@using BlazorTable
+@using WebUI.ViewModels
+@using WebUI.Components.Abstract
+@using WebUI.Services
+@using Microsoft.AspNetCore.Hosting
+
+@inject AuthenticationStateProvider _authenticationStateProvider
+@inject ServiceFactory _factory
+@inject IMatToaster _toaster
+@inject IWebHostEnvironment Environment
+@inject System.Net.Http.HttpClient HttpClient
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject NavigationManager NavManager
+
+<div class="container-fluid">
+    <div class="text-center mx-5">
+        <h1>Look to the past to inform the future</h1>
+        <p>he Hawaii Online Portal for Education is a curriculum and professional development project to gather and create a community of practice and collection of free and accessible digital content for Hawaiʻi students that is Hawaiʻi-authored, Hawaiʻi-specific, Hawaiʻi-grounded, and Hawaiʻi-serving. HOPE is funded to focus solely on digital content, pedagogical practices, and curriculum created by Hawaiʻi teachers, for Hawaiʻi.</p>
+    </div>
+    <div class="d-flex justify-content-center">
+        <div class="p-2 bd-highlight">
+            <input type="text" class="form-control form-control-lg search-control"
+                   placeholder="What are you looking for?" @bind="SearchKeyword" />
+        </div>
+        <div class="p-2 bd-highlight">
+            <select @bind="SelectedSubject" class="form-control form-control-lg search-control">
+                <option value="" selected>Subject</option>
+                @foreach (var s in _subjects.OrderBy(x=>x.Title))
+                {
+                <option value="@s.Id">@s.Title</option>
+                }
+            </select>
+        </div>
+        <div class="p-2 bd-highlight">
+            <select @bind="SelectedGrade" class="form-control form-control-lg search-control">
+                <option value="" selected>Grade</option>
+                @foreach (var s in _grades)
+                {
+                <option value="@s.Id">@s.Title</option>
+                }
+            </select>
+        </div>
+        <div class="p-2 bd-highlight">
+            <button class="btn btn-lg btn-info" @onclick="SearchForContent">Search</button>
+        </div>
+    </div>
+</div>
+    @if (_featuredList != null && _featuredList.Any())
+    {
+<div class="mt-5">
+    <h5>Featured Content <a href="" class="badge badge-info" style="font-size: 0.6em;">See All</a></h5>
+    <div class="row m-0 mb-5">
+        @foreach (var d in _featuredList)
+        {
+        <ContentDetailsThumbnailComponent ContentDetails="d" />
+        }
+    </div>
+</div>
+
+    }
+    @if (_newContents != null && _newContents.Any())
+    {
+<div class="mt-5">
+    <h5>New Content <a href="" class="badge badge-info" style="font-size: 0.6em;">See All</a></h5>
+    <div class="row m-0 mb-5">
+        @foreach (var d in _newContents)
+        {
+        <ContentDetailsThumbnailComponent ContentDetails="d" />
+        }
+    </div>
+</div>
+
+    }

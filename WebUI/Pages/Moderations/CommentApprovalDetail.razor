@@ -1,0 +1,47 @@
+﻿@page "/moderation/comment/{CommentId:int}"
+
+@using WebUI.Components
+@using WebUI.Components.Forms
+@using WebUI.Factory
+@using BlazorTable
+@using WebUI.ViewModels
+@using WebUI.Components.Abstract
+@using WebUI.Services
+@using Microsoft.AspNetCore.Hosting
+@using WebUI.Data
+
+
+@inject AuthenticationStateProvider _authenticationStateProvider
+@inject ServiceFactory _factory
+@inject IMatToaster _toaster
+@inject IWebHostEnvironment Environment
+@inject System.Net.Http.HttpClient HttpClient
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject NavigationManager NavManager
+
+
+<div class="container-fluid">
+    <h3>Comment Approval Detail</h3>
+    <table class="table table-bordered">
+        <thead class="thead-light">
+            <tr>
+                <th>Commenter</th>
+                <th>Comment Date</th>
+                <th>Comments</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@Comment.User.FullName</td>
+                <td>@Comment.Added.ToShortDateString()</td>
+                <td>@Comment.Comment</td>
+            </tr>
+        </tbody>
+    </table>
+    <a class="btn btn-outline-info btn-sm" href="/moderation/comments">Cancel</a>
+    <button class="btn btn-danger btn-sm" @onclick="RejectComment">Reject</button>
+    <button class="btn btn-success btn-sm" @onclick="ApproveComment">Approve</button>
+</div>
+<hr/>
+<WebUI.Components.ContentDetailsViewComponent ContentId="ContentId" HideSideBar="true" />

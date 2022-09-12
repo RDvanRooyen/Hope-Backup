@@ -1,0 +1,97 @@
+﻿@page "/moderation/comments"
+@using WebUI.Components
+@using WebUI.Components.Forms
+@using WebUI.Factory
+@using BlazorTable
+@using WebUI.ViewModels
+@using WebUI.Components.Abstract
+@using WebUI.Services
+@using Microsoft.AspNetCore.Hosting
+@using WebUI.Data
+
+
+@inject AuthenticationStateProvider _authenticationStateProvider
+@inject ServiceFactory _factory
+@inject IMatToaster _toaster
+@inject IWebHostEnvironment Environment
+@inject System.Net.Http.HttpClient HttpClient
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject NavigationManager NavManager
+
+<div class="row m-0">
+    <div class="col-md-12 p-0"> 
+        <div class="mb-4">
+            <ATableView TItem="ContentComment"
+                        AllItems="_comments"
+                        UseAllItems=true
+                        TService="ServiceBase"
+                        Roles="SuperAdmin, Admin, Moderator"
+                        IdField="@(x => x.Id)"
+                        EditIdField="@(x => x.Id)"
+                        IdFieldFilter="@(x=>x.Id== 0)"
+                        NameField="@(x => x.Comment)"
+                        Title=""
+                        ShowActiveToggle="false"
+                        AdditionalCSSClasses="m-0 p-0">
+
+                <ToolbarContent>
+                    <button class="btn btn-info btn-sm" @onclick="SelectAllComments">Select All</button>
+                    <button class="btn btn-info btn-sm" @onclick="SelectNoneComments">Select None</button>
+                    <button disabled="@(TotalSelected<1)" class="btn btn-danger btn-sm" @onclick="RejectSelectedComments">Reject</button>
+                    <button disabled="@(TotalSelected<1)" class="btn btn-success btn-sm" @onclick="ApproveSelectedComments">Approve</button>
+                </ToolbarContent>
+                <PagerToolbar>
+                    <h4>Comment Approval List</h4>
+                </PagerToolbar>
+                <ChildContent>
+                    <MgmtTableCol TItem="ContentComment" Title="" Field="@(x=>x.Checked)" Filterable="false" Width="20px">
+                        <Template>
+                            <input type="checkbox" @bind="@context.Checked" />
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentComment" Title="Commenter" Field="@(x=>x.User.FullName)" Width="200px">
+                        <Template>
+                            @context.User.FullName
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentComment" Title="Comment Date" Field="@(x=>x.Added)">
+                        <Template>
+                            @context.Added.ToShortDateString()
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentComment" Title="Name of Content" Field="@(x=>x.ContentDetails.Title)">
+                        <Template>
+                            @context?.ContentDetails?.Title
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentComment" Title="Comments" Field="@(x=>x.Comment)">
+                        <Template>
+                            @context.Comment
+                        </Template>
+                    </MgmtTableCol>
+                    <MgmtTableCol TItem="ContentComment" Title="Action" Field="@(x=>x.Id)">
+                        <Template>
+                            <a href="/moderation/comment/@context.Id" class="btn btn-sm btn-info">Details</a>
+                            <button class="btn btn-danger btn-sm" @onclick="() => { _rejectCommentId=context.Id; _rejectCommentName=context.Comment; OpenDeleteDialog(); }"><i class="fa fa-times" aria-hidden="true"></i></button>
+                            <button class="btn btn-success btn-sm" @onclick="() => { ApproveComment(context.Id); }"><i class="fa fa-check" aria-hidden="false"></i></button>
+                            <MatDialog @bind-IsOpen="@_deleteDialogIsOpen">
+                                <MatDialogContent>
+                                    <div class="row">
+                                        <div class="col">
+                                            <p class="pt-1">@($"Are you sure you want to Reject {@_rejectCommentName}")</p>
+                                        </div>
+                                    </div>
+                                </MatDialogContent>
+                                <MatDialogActions>
+                                    <button class="btn btn-sm btn-danger btn-sm p-1 m-1" type="button" @onclick="() => { RejectComment(_rejectCommentId); }">Reject</button>
+                                    <button class="btn btn-sm btn-primary btn-sm p-1 m-1" type="button" @onclick="CloseDeleteDialog">Cancel</button>
+                                </MatDialogActions>
+                            </MatDialog>
+                        </Template>
+                    </MgmtTableCol>
+                </ChildContent>
+            </ATableView>
+        </div>
+    </div>
+</div>

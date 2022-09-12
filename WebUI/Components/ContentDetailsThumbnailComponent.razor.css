@@ -1,0 +1,10 @@
+﻿.default-photo {
+    width: 20rem;
+    height: 20rem;
+    cursor: pointer;
+}
+.search-photo {
+    width: 10rem;
+    height: 10rem;
+    cursor: pointer;
+}

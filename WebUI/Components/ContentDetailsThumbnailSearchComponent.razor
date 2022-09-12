@@ -1,0 +1,74 @@
+﻿
+
+@inject NavigationManager NavigationManager
+@inject NavigationManager NavManager
+
+@if (IsGrid)
+{
+    <div class="col-md-3 p-3 text-center" @onclick="@(()=> { ShowContentDetail(ContentDetails.Id); })">
+        <div class="card mb-2 m-auto @_cssClass">
+            @if (!string.IsNullOrEmpty(ContentDetails.PrimaryPhotoPath))
+            {
+
+            <img class="card-img-top"
+                 src="@WebUI.Helpers.ImageTool.ImagePathToBase64(System.IO.Path.Combine(Configuration["AppSettings:BaseDirectory"], ContentDetails.PrimaryPhotoPath).Replace(@"\",@"/").ToString())"
+                 alt="@ContentDetails.PrimaryPhotoPath" />
+            }
+            else
+            {
+                <img class="card-img-top"
+                     src="/images/logo-gray.png"
+                     alt="@ContentDetails.Title" />
+            }
+        </div>
+        <strong>@ContentDetails.Title</strong>
+        <div>@(ContentDetails.SummaryTwoSentences)</div>
+        <div><strong>Subjects: </strong>@ContentDetails.SubjectsText</div>
+        <div><strong>Grades: </strong>@ContentDetails.GradesText</div>
+        <div><strong>Topics: </strong>@ContentDetails.TopicsText</div>
+        <div><strong>Contributors: </strong>@ContentDetails.ContributorsString</div>
+        <div><strong>Date Added: </strong>@ContentDetails.CreatedDateTime.ToShortDateString()</div>
+        <div><strong>Average Rating: </strong>@ContentDetails.AverageRating.ToDecimalTwoPoint()</div>
+    </div>
+}
+else
+{
+
+    <div class="col-md-12 p-3" @onclick="@(()=> { ShowContentDetail(ContentDetails.Id); })">
+        <div class="d-flex flex-row bd-highlight mb-3">
+            <div class="p-2 bd-highlight">
+                <div class="card mb-2 m-auto @_cssClass">
+                    @if (!string.IsNullOrEmpty(ContentDetails.PrimaryPhotoPath))
+                    {
+
+                        <img class="card-img-top"
+                             src="@WebUI.Helpers.ImageTool.ImagePathToBase64(System.IO.Path.Combine(Configuration["AppSettings:BaseDirectory"], ContentDetails.PrimaryPhotoPath).Replace(@"\",@"/").ToString())"
+                             alt="@ContentDetails.PrimaryPhotoPath" />
+                    }
+                    else
+                    {
+                        <img class="card-img-top"
+                             src="/images/logo-gray.png"
+                             alt="@ContentDetails.Title" />
+                    }
+                </div>
+            </div>
+            <div class="p-2  flex-fill bd-highlight text-left">
+                <strong>@ContentDetails.Title</strong>
+                <div>@(ContentDetails.SummaryTwoSentences)</div>
+            </div>
+            <div class="p-2 bd-highlight">
+                <div style="width: 250px">
+                    <div><strong>Subjects: </strong>@ContentDetails.SubjectsText</div>
+                    <div><strong>Grades: </strong>@ContentDetails.GradesText</div>
+                    <div><strong>Topics: </strong>@ContentDetails.TopicsText</div>
+                    <div><strong>Contributors: </strong>@ContentDetails.ContributorsString</div>
+                    <div><strong>Date Added: </strong>@ContentDetails.CreatedDateTime.ToShortDateString()</div>
+                    <div><strong>Average Rating: </strong>@ContentDetails.AverageRating.ToDecimalTwoPoint()</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+

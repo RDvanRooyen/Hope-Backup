@@ -1,0 +1,81 @@
+﻿@page "/devtest"
+@using System.Text
+
+
+@attribute [Authorize(Roles = "SuperAdmin,Admin,User")]
+
+@foreach (var item in GradesList)
+{
+    @if (SelectedList.Contains(item))
+    {
+        bTest = true;
+    }
+    else
+    {
+        bTest = false;
+    }
+
+    <input @bind="bTest" @onclick="() => AlterList(item)" type="checkbox" />
+    <label>@item</label>
+
+@*    if (Test.ToString().Contains(item))
+    {
+        <input @bind="stringTest" @onclick="() => AlterList(item)" type="checkbox" />
+        <label>@item</label>
+    }
+    else
+    {
+        <input @onclick="() => AlterList(item)" type="checkbox" />
+        <label>@item</label>
+    }*@
+}
+
+
+
+@code{
+    [CascadingParameter(Name = "MainLayout")]
+    public MainLayout MainLayout { get; set; }
+
+    public bool bTest = true;
+
+    public List<string> GradesList = new List<string>()
+    {
+        "1",
+        "2",
+        "3"
+    };
+
+    public List<string> SelectedList = new List<string>()
+    {        
+        "3",
+        "1"
+    };
+
+    public StringBuilder Test = new StringBuilder("3");
+    
+    public async Task AlterList(string item)
+    {
+        if (SelectedList.Contains(item))
+        {
+            SelectedList.Remove(item);
+        }
+        else
+        {
+            SelectedList.Add(item);
+        }
+
+        //if (Test.ToString().Contains(item))
+        //{
+        //    Test.Remove(Test.ToString().IndexOf(item), 1);
+        //}
+        //else
+        //{
+        //    Test.Append(item);
+        //}
+    }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {        
+        
+    }
+}

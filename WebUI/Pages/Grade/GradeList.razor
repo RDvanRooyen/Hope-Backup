@@ -1,0 +1,13 @@
+﻿@page "/list/grade"
+@using WebUI.Components
+@using WebUI.Services
+
+<ManagementListPage TItem="Grade"
+                    TService="ServiceBase"
+                    Title="Grades"
+                    IdField="@(x => x.Id)"
+                    NameField="@(x => x.Title)"
+                    ManagePath="grade">                
+                    
+</ManagementListPage>
+

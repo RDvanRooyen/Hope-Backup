@@ -1,0 +1,148 @@
+﻿@using System.IO
+@using WebUI.Factory
+@using WebUI.Services
+@using WebUI.Components
+
+@inject ServiceFactory _factory
+@inject IMatToaster _toaster
+@inject NavigationManager _navigationManager
+@inject AuthenticationStateProvider _authenticationStateProvider
+
+<CascadingAuthenticationState>
+    <!--top navbar-->
+    <nav class="navbar fixed-top navbar-expand-sm navbar-light navbar-toggleable-sm border-bottom box-shadow mb-5" style="background-color: #14a2b8;">
+        <!--Logo-->
+        <a class="navbar-brand" href="/">
+            <img src="/images/HOPE_logo_color_sm.png" height="40" alt="Navbar Logo">
+        </a><h4 class="m-0">HOPE: Hawaiʻi Online Portal for Education</h4>
+        <!--toggler-->
+        <button class="navbar-toggler" @onclick="ToggleTopNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <!--collapse content-->
+        <div class="@TopNavCssClass navbar-collapse collapse d-sm-inline-flex flex-row-sm" id="navbarMain">
+            <!--placeholder-->
+            <ul class="navbar-nav mr-auto">
+            </ul>
+
+            <a href="/content/search" class="nav-link btn btn-link text-dark">
+                Search
+            </a>
+
+            <AuthorizeView>
+
+                <a href="/content/my" class="nav-link btn btn-link text-dark">
+                    My Content
+                </a>
+                <a href="/content/list/new" class="nav-link btn btn-link text-dark">
+                    New Content
+                </a>
+            </AuthorizeView>
+            <a href="/about" class="nav-link btn btn-link text-dark">
+                About
+            </a>
+
+            <Dropdown>
+                <InitialTip> How-To's</InitialTip>
+                <ChildContent>
+                    <DropdownListItem Url="/how/register">How to Register</DropdownListItem>
+                    <DropdownListItem Url="/how/contribute">How to Contribute Content</DropdownListItem>
+                    <DropdownListItem Url="/how/use">How to Use the System</DropdownListItem>
+                </ChildContent>
+            </Dropdown>
+            <a href="/contact/new" class="nav-link btn btn-link text-dark">
+                Contact
+            </a>
+            <!--login-->
+            <AuthorizeView Roles="Moderator, SuperAdmin" Context="Auth"> 
+                <Authorized>
+                    <Dropdown TipClass="mr-4">
+                        <InitialTip> Moderation</InitialTip>
+                        <ChildContent>
+                            <DropdownListItem Url="/moderation/users">User Registration Moderation</DropdownListItem>
+                            <DropdownListItem Url="/moderation/contents">Content Approval</DropdownListItem>
+                            <DropdownListItem Url="/moderation/comments">Comment Approval</DropdownListItem>
+                            <DropdownListItem Url="/moderation/curatedcollections">Curated Collections</DropdownListItem>
+                        </ChildContent>
+                    </Dropdown>
+                </Authorized> 
+            </AuthorizeView>                    
+            <AuthorizeView Roles="SuperAdmin" Context="Auth"> 
+                <Authorized>
+                    <Dropdown TipClass="mr-4">
+                        <InitialTip> Admin</InitialTip>
+                        <ChildContent>
+                            <DropdownListItem Url="/list/grade">Grades</DropdownListItem>
+                            <DropdownListItem Url="/list/subject">Subjects</DropdownListItem>
+                            <DropdownListItem Url="/list/standard">Standards</DropdownListItem>
+                            <DropdownListItem Url="/list/Content">Contents</DropdownListItem>
+                            <DropdownListItem Url="/list/topic">Topics</DropdownListItem>
+                            <DropdownListItem Url="/contact/view">Contact Us</DropdownListItem>
+                            <DropdownListItem Url="/Identity/Admin/Index">Users</DropdownListItem>
+                        </ChildContent>
+                    </Dropdown>
+                </Authorized> 
+            </AuthorizeView>
+            <!--login-->
+            <AuthorizeView>
+                <Authorized>
+                    <form method="get" action="/Identity/Account/Manage">
+                        <button type="submit" class="nav-link btn btn-link text-dark">
+                            Account
+                        </button>
+                    </form>
+                    <!--logout-->
+                    <form method="post" action="/Identity/Account/LogOut">
+                        <button type="submit" class="nav-link btn btn-link text-dark">
+                            Sign out
+                        </button>
+                    </form>
+                </Authorized>
+                <NotAuthorized Context="d">
+                    <Dropdown TipClass="mr-4">
+                        <InitialTip><span class="oi oi-lock-locked" style="color: #11dd88;"></span>&nbsp;Login</InitialTip>
+                        <ChildContent>
+                            <DropdownListItem Url="/Identity/Account/LogOut">Login</DropdownListItem>
+                            <DropdownListItem Url="/Identity/Account/Register">Register</DropdownListItem>
+                            <div class="dropdown-divider"></div>
+                            <DropdownListItem Url="/Identity/Account/ForgotPassword">Forgot Password</DropdownListItem>
+                        </ChildContent>
+                    </Dropdown>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </nav>
+</CascadingAuthenticationState>
+
+@code {
+
+    private bool collapseTopNav = true;
+
+    private string TopNavCssClass => collapseTopNav ? "collapse" : null;
+
+    Company Company { get; set; } = new Company();
+
+    private void ToggleTopNav()
+    {
+        collapseTopNav = !collapseTopNav;
+    }
+
+    protected async override Task OnInitializedAsync()
+    {
+        //var service = await _factory.CreateService<ServiceBase>(_authenticationStateProvider);
+        //var context = service.GetContext();
+        //var company = context.Companies.FirstOrDefault();
+
+        //if (company != null)
+        //{
+        //    Company = company;
+        //}
+
+        //if (company == null)
+        //{
+        //    Company.CompanyLogoImage = "";
+        //}
+
+        await base.OnInitializedAsync();
+    }
+}

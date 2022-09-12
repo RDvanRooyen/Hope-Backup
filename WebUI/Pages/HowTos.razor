@@ -1,0 +1,202 @@
+﻿@page "/how/{HowContent}"
+
+<style>
+    body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background-image: url('images/HOPE_logo_color_sm-greyblur.png');
+        background-repeat: no-repeat;
+        background-size: cover;
+    } 
+</style>
+
+@if (HowContent == "register")
+{
+    <div class="text-center">
+        <div class="container">
+            <h1>How to Register</h1>
+            <a>
+                Click on the "Login in" button to open the sub menu.<br>
+                Click on register<br>
+                Fill in your Name, Surname, Email, Password and School.<br>
+                Select your Grade(s) as well as your Interests and/or Subjects from the dropdown list.<br>
+                Finaly click on the register button
+                <br>
+                <br>
+                &emsp; &emsp;   *Please note your password need to be a combination of atleast eight characters,<br>
+                &emsp; &emsp;    consisting of uppercase and lowercase as well as atleast one special character and number.<br>
+                <br>
+                Upon sucessfull registration, you will recieve an email with steps to comfirm your account.
+            </a>
+        </div>
+    </div>
+}
+@if (HowContent == "contribute")
+{
+    <div class="text-center">
+        <div class="container">
+            <h1>How to contribute content</h1>
+            <a>
+                Click on the "My Contnet" button in the menubar.<br>
+                Click in the "Add" button at the top of the page.<br>
+                Complete all of the fields on the form and click the next button at the bottom of the page.<br>
+                Click on either one of the following buttons on the bottom of the page.<br>
+                Submit for Review (Click on this button if all fields are entered and when you are done.)<br>
+                Save for Later (Click on this button to save the content entry form and to be able to continue at a later stage.)<br>
+                <br>
+                <br>
+            </a>
+            <div class="text-left" style="height:60vh; overflow:auto;">
+                <a>
+                    <strong>Page 1: Content Background</strong><br>
+                    <br>
+                    <strong>Title:</strong>&emsp;</a><a style="color:red;">*This is a required field.</a><a><br>
+                    The content Title.<br>
+                    <br>
+                    <strong>Summary:</strong>&emsp;</a><a style="color:red;">*This is a required field.</a><a><br>
+                    A brief description of what students are doing along with the student objective,
+                    learning outcome or learning objective. Include any special features such as the place,
+                    problem, project, purpose, product ect.<br>
+                    <br>
+                    <strong>Co-author:</strong><br>
+                    Add Co-Authors, by entering the email address of the Co-Author.<br>
+                    Click on the plus button to add more.<br>
+                    <br>
+                    <strong>Derivation:</strong><br>
+                    Allows you to credit the original work this content is based on and can be one or more references.
+                    Select the either HOPE Content ID or External Link, If the reference is to a HOPE content piece, then there
+                    will be a popup that allows the you to search for and select the piece, else you may enter a the external link.<br>
+                    Click on the plus button to add more.<br>
+                    <br>
+                    <strong>Photos:</strong><br>
+                    Upload 1-3 image(s) to that convey key aspects of the work students will do — the photo(s) will be used for the "cover"
+                    of your online education resource as it appears in the repository. Please include links to your image(s) as well as attribution
+                    information for your photos.<br>
+                    Choose an image that conveys the work students will do. For example, an action photo or a photo of final student work.<br>
+                    <br>
+                    <strong>Open Education Licensing Addressed:</strong><br>
+                    Select "Yes" if open education licensing is addressed, else select "No".<br>
+                    <br>
+                    <br>
+                    <strong>Page 2: Content Description</strong><br>
+                    <br>
+                    <strong>Grade(s):</strong>&emsp;</a><a style="color:red;">*This is a required field.</a><a><br>
+                    Select the grade(s) that apply to this content.<br>
+                    <br>
+                    <strong>Subject(s):</strong>&emsp;</a><a style="color:red;">*This is a required field.</a><a><br>
+                    Select the subject(s) that apply to this content.<br>
+                    <br>
+                    <strong>Topic(s):</strong>&emsp;</a><a style="color:red;">*This is a required field.</a><a><br>
+                    Search and then select the topic(s) that apply to this content.<br>
+                    <br>
+                    <strong>Essential Question:</strong>&emsp;</a><a style="color:red;">*This is a required field.</a><a><br>
+                    The “Essential Question” is what lies at the heart of the content?<br>
+                    A question is essential when it:<br>
+                    &emsp;1.&emsp;causes genuine and relevant inquiry into the big ideas and core content;<br>
+                    &emsp;2.&emsp;provokes deep thought, lively discussion, sustained inquiry, and new understanding as well as more questions;<br>
+                    &emsp;3.&emsp;requires students to consider alternatives, weigh evidence, support their ideas, and justify their answers;<br>
+                    &emsp;4.&emsp;stimulates vital, on‐going rethinking of big ideas, assumptions, and prior lessons;<br>
+                    &emsp;5.&emsp;sparks meaningful connections with prior learning and personal experiences;<br>
+                    &emsp;6.&emsp;naturally recurs, creating opportunities for transfer to other situations and subjects.<br>
+                    <br>
+                    <strong>Purpose/Objective(s):</strong>&emsp;</a><a style="color:red;">*This is a required field.</a><a><br>
+                    A brief description of what learners should know and be able to do upon completion of this content.<br>
+                    <br>
+                    <strong>Connection to Hawai'i:</strong>&emsp;</a><a style="color:red;">*This is a required field.</a><a><br>
+                    How the content is relevant and relatable to Hawaiʻi students.<br>
+                    <br>
+                    <strong>Place Name:</strong><br>
+                    If your content is specific to a particular place or region, please indicate in this field.<br>
+                    <br>
+                    <strong>Duration:</strong>&emsp;</a><a style="color:red;">*This is a required field.</a><a><br>
+                    Select how long will the student will take to complete this course.<br>
+                    <br>
+                    <br>
+                    <strong>Page 3: Content References</strong><br>
+                    <br>
+                    <strong>Materials Text:</strong>&emsp;</a><a style="color:red;">*This is a required field.</a><a><br>
+                    Materials and supplies required to support this learning journey. You do not need to list the files you are providing in your unit;
+                    however, do list things teachers will need to have on hand or may need to borrow/purchase (including subscriptions, memberships).
+                    Give some thought to the materials needed for face-to-face (F2F) and for virtual instruction.<br>
+                    Describe and/or list what items are required to support this learning journey? Include expendables (one use, throw away ex: cardboard),
+                    class equipment (used over again ex: Exacto knives) and even capital items (costly one per class or school items
+                    like 3D printer).<br>
+                    <br>
+                    <strong>Materials Uploads:</strong><br>
+                    Material files to support the content.<br>
+                    <br>
+                    <strong>Resources Text:</strong>&emsp;</a><a style="color:red;">*This is a required field.</a><a><br>
+                    Optional learning resources for students that could be used with (but are not required for) your unit like magazine articles,
+                    websites, databases. Give some thought to the resources students could use in F2F and in virtual instruction.<br>
+                    <br>
+                    <strong>Resources Uploads:</strong><br>
+                    Resource pdf files to support the content.<br>
+                    <br>
+                    <strong>Community Connections & Partnerships Text:</strong>&emsp;</a><a style="color:red;">*This is a required field.</a><a><br>
+                    Community resources — people and organizations — that were (or could be) involved with the learning journey you’ve developed.
+                    Give some thought to those who were/could be tapped for F2F and for virtual instruction.<br>
+                    <br>
+                    <strong>Community Connections & Partnerships Uploads:</strong><br>
+                    Community Connections & Partnerships files to support the content.<br>
+                    <br>
+                    <br>
+                    <strong>Page 4: Content Outline</strong><br>
+                    <br>
+                    <strong>Standard(s):</strong>&emsp;</a><a style="color:red;">*This is a required field.</a><a><br>
+                    Standards, and/or framework elements with which your unit aligns, e.g. items from Hawaiʻi Core Standards (CCSS, NGSS, Hawaiʻi C3),
+                    the General Learner Outcomes (GLOs), HĀ. NOTE: Only include focal standards/elements for which your unit is designed
+                    (i.e. ones your unit explicitly addresses and assesses).<br>
+                    <br>
+                    <strong>Formative Assessments:</strong>&emsp;</a><a style="color:red;">*This is a required field.</a><a><br>
+                    A brief description of the formative assessments in your unit that provide feedback to the learner and help the teacher consider
+                    approaches/adjustments. Provide links to samples of your formative assessments, giving some thought to F2F and virtual instruction.<br>
+                    <br>
+                    <strong>Formative Assessments Uploads:</strong><br>
+                    Formative Assessments files to support the content.<br>
+                    <br>
+                    <strong>Summative Assessments and Major Milestones:</strong>&emsp;</a><a style="color:red;">*This is a required field if there is not a Final Product/Performance.</a><a><br>
+                     A brief description of the summative assessments in your unit that capture and record the skill and knowledge learners have developed
+                     at key points in the learning journey. Provide links to samples of your summative assessments, giving some thought to F2F and virtual
+                     instruction.<br>
+                    <br>
+                    <strong>Summative Assessments and Major Milestones Uploads:</strong><br>
+                    Summative Assessments and Major Milestones files to support the content.<br>
+                    <br>
+                    <strong>Final Product/Performance:</strong>&emsp;</a><a style="color:red;">*This is a required field if there is not a final Summative Assessment.</a><a><br>
+                     A brief description of the final product or performance in your unit that gives purpose and direction to students’ learning.
+                     Provide links to samples of the instructional materials for these final/products or performances, giving some thought to F2F
+                     and virtual instruction.<br>
+                    <br>
+                    <br>
+                    <strong>Page 5: Content Attachments</strong><br>
+                    <br>
+                    <strong>Pacing Guide:</strong><br>
+                    Unit overview: A short (ideally 1-page) class-period-by-class-period road map that gives the big picture of the learning journey.<br>
+                    Lesson plans/teacher guides: Detailed teacher-facing materials that can be followed, including learning objectives, activities,
+                    materials and supplies needed, and expected evidence of learning for each lesson or class period.<br>
+                    Student-facing materials: Materials that can be given/displayed to students to use and/or reference during the unit,
+                    including presentation slides, handouts, worksheets, and assessments.<br>
+                    <br>
+                    <strong>Student Work Examples (Artifacts):</strong><br>
+                    Samples of your classroom artifacts (e.g. photos of students’ final products, a selection of student assessment responses,
+                    student writing, photo of class garden, etc.).<br>
+                    <br>
+                </a>
+            </div>
+        </div>
+    </div>
+}
+@if (HowContent == "use")
+{
+    <div class="text-center">
+        <div class="container">
+            How to use
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string HowContent { get; set; }
+}

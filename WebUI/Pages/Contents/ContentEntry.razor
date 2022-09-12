@@ -1,0 +1,1006 @@
+﻿@page "/content/entry/{ContentDetailId:int}"
+@using System
+@using System.IO
+@using Microsoft.AspNetCore.Hosting
+@using Microsoft.Extensions.Logging
+@using Newtonsoft.Json
+@using System.Drawing
+@using WebUI.Components
+@using WebUI.Services
+@using WebUI.Data.Models
+@using WebUI.Factory
+@using WebUI.Data
+@using System.Threading
+@using Blazored.Typeahead
+
+@inject AuthenticationStateProvider _authenticationStateProvider
+@inject ServiceFactory _factory
+@inject IMatToaster _toaster
+@inject IWebHostEnvironment Environment
+@inject System.Net.Http.HttpClient HttpClient
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject NavigationManager NavManager
+
+<div class="p-2">
+    <h3>Content Entry</h3>
+</div>
+<div class="p-2">
+    <div class="btn-group" role="group" aria-label="Basic example">
+        <button type="button" class="btn @(Step == 1 ? "btn-info" : "btn-outline-info")" @onclick="async () => { await PerformStepAsync(1); }">
+            Content Background <span class="badge badge-dark">1</span>
+        </button>
+        <button type="button" class="btn @(Step == 2 ? "btn-info" : "btn-outline-info")" @onclick="async () => { await PerformStepAsync(2); }">
+            Content Description <span class="badge badge-dark">2</span>
+        </button>
+        <button type="button" class="btn @(Step == 3 ? "btn-info" : "btn-outline-info")" @onclick="async () => { await PerformStepAsync(3); }">
+            Content References <span class="badge badge-dark">3</span>
+        </button>
+        <button type="button" class="btn @(Step == 4 ? "btn-info" : "btn-outline-info")" @onclick="async () => { await PerformStepAsync(4); }">
+            Content Outline <span class="badge badge-dark">4</span>
+        </button>
+        <button type="button" class="btn @(Step == 5 ? "btn-info" : "btn-outline-info")" @onclick="async () => { await PerformStepAsync(5); }">
+            Content Attachments <span class="badge badge-dark">5</span>
+        </button>
+    </div>
+</div>
+<div class="row">
+    @if (Step == 1)
+    {
+        <div class="p-2 col-8">
+            <div class="form-group">
+                <label>
+                    Author
+                </label>
+                <input type="text" class="form-control form-control-sm" readonly value="@_contentDetails.CreatedBy?.FirstName @_contentDetails.CreatedBy?.LastName">
+            </div>
+            <div class="form-group">
+                <label>
+                    Title
+                </label>
+                @if (string.IsNullOrEmpty(_contentDetails.Title))
+                {
+                    <small class="form-text text-danger float-right">Required Field</small>
+                }
+                <input type="text" class="form-control form-control-sm" @bind="_contentDetails.Title">
+            </div>
+            <div class="form-group">
+                <label>Summary </label>
+                @*@if (IsSummaryEmpty().Result)
+                    {
+                        <small class="form-text text-danger float-right">Required Field</small>
+                    }*@
+                <BlazoredTextEditor @ref="@summaryRTF" DebugLevel="error" Placeholder="">
+                    <ToolbarContent>
+                        <select class="ql-header">
+                            <option selected=""></option>
+                            <option value="1"></option>
+                            <option value="2"></option>
+                            <option value="3"></option>
+                            <option value="4"></option>
+                            <option value="5"></option>
+                        </select>
+                        <span class="ql-formats">
+                            <button class="ql-bold"></button>
+                            <button class="ql-italic"></button>
+                            <button class="ql-underline"></button>
+                            <button class="ql-strike"></button>
+                        </span>
+
+                    </ToolbarContent>
+                    <EditorContent></EditorContent>
+                </BlazoredTextEditor>
+            </div>
+            <div class="form-group">
+                <label>
+                    Co-author
+                    <button type="button" class="btn btn-sm btn-outline-info" @onclick="AddCoAuthor"><i class="fas fa-plus"></i></button>
+                </label>
+                <div class="border p-1 mb-5">
+
+                    @if (_coAuthorEmails != null && _coAuthorEmails.Any())
+                    {
+                        @for (var i = 0; i < _coAuthorEmails.Count; i++)
+                        {
+                            var dIndex = i;
+                            var coAuth = _coAuthorEmails[dIndex];
+                            <div class="d-flex flex-row">
+                                <div class="form-group flex-fill m-0 mb-1">
+                                    <input type="text" @onchange="(ChangeEventArgs args) => { UpdateCoAuthor(args, dIndex); }" class="form-control form-control-sm" value="@coAuth.EmailAddress" />
+                                    @if (!coAuth.IsValid)
+                                    {
+                                        <small class="form-text text-danger float-right">@coAuth.InvalidMessage</small>
+                                    }
+                                </div>
+                                <div class="ml-1">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => { RemoveCoAuthor(dIndex); }"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <small class="text-info text-center d-block"><a href="" @onclick="AddCoAuthor" @onclick:preventDefault="true"><i class="fas fa-plus"></i> add co-author</a></small>
+                    }
+                </div>
+            </div>
+            <div class="form-group">
+                <label>
+                    Derivation
+                    <button type="button" class="btn btn-sm btn-outline-info" @onclick="AddDerivation"><i class="fas fa-plus"></i></button>
+                </label>
+                <div class="border p-1 mb-5">
+                    @if (_derivations != null && _derivations.Any())
+                    {
+
+                        for (var i = 0; i < _derivations.Count; i++)// (var _derivationSelected in _derivations)
+                        {
+                            var dIndex = i;
+                            var _derivationSelected = _derivations[dIndex];
+                            var optIndex = 0;
+                            <div class="d-flex align-items-center">
+                                @foreach (var option in _derivationOptions)
+                                {
+                                    <div class="custom-control custom-radio custom-control-inline">
+                                        <input value="@option" type="radio" name="@($"derivative{dIndex}")" id="@($"derivative_{optIndex}_{dIndex}")"
+                                               checked="@(option == _derivationSelected.Category)"
+                                               @onchange="(ChangeEventArgs a) => { DerivationChanged(a, dIndex); }" class="custom-control-input">
+                                        <label class="custom-control-label" for="@($"derivative_{optIndex}_{dIndex}")">
+                                            @option
+                                        </label>
+                                    </div>
+                                    optIndex++;
+                                }
+
+                                <div class="form-group flex-fill m-0">
+                                    @if (_derivationSelected.Category == ContentDetails.DerivationOptionHopeContentID)
+                                    {
+                                        <BlazoredTypeahead SearchMethod="SearchContent"
+                                                           @bind-Value="_derivationSelected.ContentDetails"
+                                                           EnableDropDown="false"
+                                                           placeholder="Search content title">
+                                            <SelectedTemplate Context="content">
+                                                @content.Title
+                                            </SelectedTemplate>
+                                            <HelpTemplate>
+                                                Please enter a minimum of 2 characters to perform a search.
+                                            </HelpTemplate>
+                                            <NotFoundTemplate Context="searchText">
+                                            </NotFoundTemplate>
+                                            <ResultTemplate Context="content">
+                                                @content.Title
+                                            </ResultTemplate>
+                                        </BlazoredTypeahead>
+                                    }
+                                    @if (_derivationSelected.Category == ContentDetails.DerivationOptionExternalLink)
+                                    {
+                                        <input type="text" class="form-control " placeholder="Enter external link" @bind="_derivationSelected.ExternalLink">
+                                    }
+                                </div>
+                                <div class="ml-1">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => { RemoveDerivation(dIndex); }"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </div>
+
+                        }
+                    }
+                    else
+                    {
+                        <small class="text-info text-center d-block"><a href="" @onclick="AddDerivation" @onclick:preventDefault="true"><i class="fas fa-plus"></i> add derivation</a></small>
+                    }
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Photos </label>
+                <div class="custom-file">
+                    <InputFile OnChange="(async (InputFileChangeEventArgs e) => { await UploadToDictionary(PhotoDictionary, e); })" class="custom-file-input" id="photoFile" accept="image/*" multiple />
+                    <label class="custom-file-label" for="photoFile">Photos</label>
+                </div>
+                @if (PhotoDictionary != null && PhotoDictionary.Any())
+                {
+                    <div class="border p-1 mt-1">
+                        @foreach (var p in PhotoDictionary)
+                        {
+                            <div class="d-flex align-items-center">
+                                @if (p.Value.ContentType.ToLower().StartsWith("image"))
+                                {
+                                    <div class="border rounded p-1 m-1" style="width: 100px"><img style="width: 100%" src="@p.Value.ThumbnailBase64" /></div>
+                                }
+                                else
+                                {
+                                    <div class="p-1 m-1" style="width: 100px"></div>
+                                }
+                                <div class="flex-fill custom-control custom-radio custom-control-inline mr-1">
+                                    <input type="radio" id="photo-@p.Value.ContentFileId"
+                                           value="@p.Value.Filename"
+                                           checked="@p.Value.Filename==_selectedPrimaryPhoto"
+                                           @onchange="((ChangeEventArgs a) => { _selectedPrimaryPhoto = a.Value.ToString(); })"
+                                           name="primary-photo"
+                                           class="custom-control-input">
+                                    <label class="custom-control-label" for="photo-@p.Value.ContentFileId" title="Select this photo as thumbnail">
+                                        @p.Key
+                                    </label>
+                                </div>
+                                @if (p.Value.HasDescription)
+                                {
+                                    <input type="text" @bind="p.Value.Description" class="form-control form-control-sm mr-1" />
+                                }
+                                <button type="button" class="ml-auto btn btn-sm btn-outline-danger mr-1" @onclick="() => { RemoveTempFile(PhotoDictionary, p.Key); }">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <hr />
+                        }
+                    </div>
+                }
+
+                Primary Photo: @(_selectedPrimaryPhoto)
+            </div>
+            <div class="form-group">
+                <label>Open Education Licensing Addressed </label>
+                <div class="row">
+                    <div class="col-6">
+                        <EditForm Model="_openEducationLicensingAddressed">
+                            <InputRadioGroup @bind-Value="_openEducationLicensingAddressed">
+                                @foreach (var option in _openEducationLicensingAddressedOptions)
+                                    {
+                                    <div class="custom-control custom-radio custom-control-inline">
+                                        <InputRadio Value="option" class="custom-control-input" id="@(option + "_r2")" />
+                                        <label class="custom-control-label" for="@(option + "_r2")">@option</label>
+                                    </div>
+                                    }
+                            </InputRadioGroup>
+                        </EditForm>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    }
+    @if (Step == 2)
+    {
+        <div class="p-2 col-8">
+            <div class="form-group">
+                <label>
+                    Grade
+                </label>
+                @if (_grades != null && !_grades.Where(x => x.Checked ?? false).Any())
+                {
+                    <small class="form-text text-danger float-right">Required Field</small>
+                }
+                <br />
+                @foreach (var g in _grades)
+                {
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" value="" id="@($"grade{g.Id}")" @bind="g.Checked">
+                        <label class="form-check-label" for="@($"grade{g.Id}")">
+                            @g.Title
+                        </label>
+                    </div>
+                }
+            </div>
+            <div class="form-group">
+                <label>
+                    Subjects
+                </label>
+                @if (SelectedSubjects == null || !SelectedSubjects.Any())
+                {
+                    <small class="form-text text-danger float-right">Required Field</small>
+                }
+
+                <BlazoredTypeahead SearchMethod="SearchSubject"
+                                   @bind-Values="SelectedSubjects"
+                                   EnableDropDown="true"
+                                   ShowDropDownOnFocus="true"
+                                   MinimumLength="0"
+                                   placeholder="type here to search">
+                    <SelectedTemplate Context="t">
+                        @t.Title
+                    </SelectedTemplate>
+                    <HelpTemplate>
+                        Please enter a minimum of 2 characters to perform a search.
+                    </HelpTemplate>
+                    <NotFoundTemplate Context="searchText">
+                        "@searchText" not found
+                    </NotFoundTemplate>
+                    <ResultTemplate Context="t">
+                        @t.Title
+                    </ResultTemplate>
+                </BlazoredTypeahead>
+
+                @*@foreach (var g in _subjects)
+                    {
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" value="" id="@($"subject{g.Id}")" @bind="g.Checked">
+                            <label class="form-check-label" for="@($"subject{g.Id}")">
+                                @g.Title
+                            </label>
+                        </div>
+                    }*@
+            </div>
+            <div class="form-group">
+                <label>Topics</label>
+                @if (SelectedTopics == null || !SelectedTopics.Any())
+                {
+                    <small class="form-text text-danger float-right">Required Field</small>
+                }
+                <BlazoredTypeahead SearchMethod="SearchTopic"
+                                   @bind-Values="SelectedTopics"
+                                   EnableDropDown="true"
+                                   ShowDropDownOnFocus="true"
+                                   MinimumLength="2"
+                                   AddItemOnEmptyResultMethod="ItemAddedMethod"
+                                   placeholder="type here to search">
+                    <SelectedTemplate Context="t">
+                        @{
+                                if (t.Approved)
+                                {
+                                <span class="text-success" style="font-weight: bold;">@t.Title</span>
+                                }
+                                else
+                                {
+                                <span class="text-danger" style="font-weight: bold; font-style: italic;" title="New topic. Not yet approved!">@t.Title</span>
+                                }
+                        }
+
+                    </SelectedTemplate>
+                    <HelpTemplate>
+                        Please enter a minimum of 2 characters to perform a search.
+                    </HelpTemplate>
+                    <NotFoundTemplate Context="searchText">
+                        Add "@searchText" as a new topic <br />
+                        The newly added topic will be selected after being added.
+                    </NotFoundTemplate>
+                    <ResultTemplate Context="t">
+                        @t.Title
+                    </ResultTemplate>
+                </BlazoredTypeahead>
+            </div>
+            <div class="form-group">
+                <label>
+                    Essential Question <span class="badge badge-pill badge-info" style="cursor: pointer;" @onclick="@(()=> { ShowHelp("EssentialQuestion"); })">?</span>
+                </label>
+
+                <BlazoredTextEditor @ref="@essentialRTF" DebugLevel="error" Placeholder="">
+                    <ToolbarContent>
+                        <select class="ql-header">
+                            <option selected=""></option>
+                            <option value="1"></option>
+                            <option value="2"></option>
+                            <option value="3"></option>
+                            <option value="4"></option>
+                            <option value="5"></option>
+                        </select>
+                        <span class="ql-formats">
+                            <button class="ql-bold"></button>
+                            <button class="ql-italic"></button>
+                            <button class="ql-underline"></button>
+                            <button class="ql-strike"></button>
+                        </span>
+
+                    </ToolbarContent>
+                    <EditorContent></EditorContent>
+                </BlazoredTextEditor>
+            </div>
+            <div class="form-group">
+                <label>
+                    Purpose/Objective
+                </label>
+                @*@if (IsRTFEmptyAsync(purposeRTF).Result)
+                    {
+                        <small class="form-text text-danger float-right">Required Field</small>
+                    }*@
+                <BlazoredTextEditor @ref="@purposeRTF" DebugLevel="error" Placeholder="">
+                    <ToolbarContent>
+                        <select class="ql-header">
+                            <option selected=""></option>
+                            <option value="1"></option>
+                            <option value="2"></option>
+                            <option value="3"></option>
+                            <option value="4"></option>
+                            <option value="5"></option>
+                        </select>
+                        <span class="ql-formats">
+                            <button class="ql-bold"></button>
+                            <button class="ql-italic"></button>
+                            <button class="ql-underline"></button>
+                            <button class="ql-strike"></button>
+                        </span>
+
+                    </ToolbarContent>
+                    <EditorContent></EditorContent>
+                </BlazoredTextEditor>
+            </div>
+            <div class="form-group">
+                <label>
+                    Connection to Hawai'i'
+                </label>
+                @if (string.IsNullOrEmpty(_contentDetails.ConnectionToHawaii))
+                {
+                    <small class="form-text text-danger float-right">Required Field</small>
+                }
+                <input type="text" class="form-control form-control-sm" @bind="_contentDetails.ConnectionToHawaii" />
+            </div>
+            <div class="form-group">
+                <label>Place Name</label>
+                <select class="form-control form-control-sm" @bind="_contentDetails.PlaceName">
+                    <option value="">-Select Place Name-</option>
+                    @foreach (var il in IslandList.OrderBy(x => x))
+                    {
+                        <option value="@il">@il</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Duration</label>
+                <input type="text" class="form-control form-control-sm" @bind="_contentDetails.Duration" />
+            </div>
+        </div>
+    }
+    @if (Step == 3)
+    {
+        <div class="p-2 col-8">
+            <div class="form-group">
+                <label>
+                    Materials Text
+                </label>
+                @*@if (IsRTFEmptyAsync(materialRTF).Result)
+                    {
+                        <small class="form-text text-danger float-right">Required Field</small>
+                    }*@
+                <BlazoredTextEditor @ref="@materialRTF" DebugLevel="error" Placeholder="">
+                    <ToolbarContent>
+                        <select class="ql-header">
+                            <option selected=""></option>
+                            <option value="1"></option>
+                            <option value="2"></option>
+                            <option value="3"></option>
+                            <option value="4"></option>
+                            <option value="5"></option>
+                        </select>
+                        <span class="ql-formats">
+                            <button class="ql-bold"></button>
+                            <button class="ql-italic"></button>
+                            <button class="ql-underline"></button>
+                            <button class="ql-strike"></button>
+                        </span>
+
+                    </ToolbarContent>
+                    <EditorContent></EditorContent>
+                </BlazoredTextEditor>
+            </div>
+            <div class="form-group">
+                <label>Materials Uploads </label>
+                <div class="custom-file">
+                    <InputFile OnChange="(async (InputFileChangeEventArgs e) => { await UploadToDictionary(MaterialDictionary, e); })" class="custom-file-input" id="materialUploads" accept="image/*" multiple />
+                    <label class="custom-file-label" for="materialUploads"></label>
+                </div>
+                @if (MaterialDictionary != null && MaterialDictionary.Any())
+                {
+                    <div class="border p-1 mt-1">
+                        @foreach (var p in MaterialDictionary)
+                        {
+                            <div class="d-flex align-items-center">
+                                @if (p.Value.ContentType.ToLower().StartsWith("image"))
+                                {
+                                    <div class="border rounded p-1 m-1" style="width: 100px"><img style="width: 100%" src="@p.Value.ThumbnailBase64" /></div>
+                                }
+                                else
+                                {
+                                    <div class="p-1 m-1" style="width: 100px"></div>
+                                }
+                                @if (p.Value.HasDescription)
+                                {
+                                    <input type="text" @bind="p.Value.Description" class="form-control form-control-sm mr-1" />
+                                }
+                                <button type="button" class="ml-auto btn btn-sm btn-outline-danger mr-1" @onclick="() => { RemoveTempFile(PhotoDictionary, p.Key); }">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <hr />
+                        }
+                    </div>
+                }
+            </div>
+            <div class="form-group">
+                <label>
+                    Resources Text
+                </label>
+                @*@if (IsRTFEmptyAsync(resourcesRTF).Result)
+                    {
+                        <small class="form-text text-danger float-right">Required Field</small>
+                    }*@
+                <BlazoredTextEditor @ref="@resourcesRTF" DebugLevel="error" Placeholder="">
+                    <ToolbarContent>
+                        <select class="ql-header">
+                            <option selected=""></option>
+                            <option value="1"></option>
+                            <option value="2"></option>
+                            <option value="3"></option>
+                            <option value="4"></option>
+                            <option value="5"></option>
+                        </select>
+                        <span class="ql-formats">
+                            <button class="ql-bold"></button>
+                            <button class="ql-italic"></button>
+                            <button class="ql-underline"></button>
+                            <button class="ql-strike"></button>
+                        </span>
+
+                    </ToolbarContent>
+                    <EditorContent></EditorContent>
+                </BlazoredTextEditor>
+            </div>
+            <div class="form-group">
+                <label>Resources Uploads </label>
+                <div class="custom-file">
+                    <InputFile OnChange="(async (InputFileChangeEventArgs e) => { await UploadToDictionary(ResourceDictionary, e); })" class="custom-file-input" id="resourcelUploads" multiple />
+                    <label class="custom-file-label" for="resourcelUploads"></label>
+                </div>
+                @if (ResourceDictionary != null && ResourceDictionary.Any())
+                {
+                    <div class="border p-1 mt-1">
+                        @foreach (var p in ResourceDictionary)
+                        {
+                            <div class="d-flex align-items-center">
+                                @if (p.Value.ContentType.ToLower().StartsWith("image"))
+                                {
+                                    <div class="border rounded p-1 m-1" style="width: 100px"><img style="width: 100%" src="@p.Value.ThumbnailBase64" /></div>
+                                }
+                                else
+                                {
+                                    <div class="p-1 m-1" style="width: 100px"></div>
+                                }
+                                @if (p.Value.HasDescription)
+                                {
+                                    <input type="text" @bind="p.Value.Description" class="form-control form-control-sm mr-1" />
+                                }
+                                <button type="button" class="ml-auto btn btn-sm btn-outline-danger mr-1" @onclick="() => { RemoveTempFile(PhotoDictionary, p.Key); }">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <hr />
+                        }
+                    </div>
+                }
+            </div>
+            <div class="form-group">
+                <label>
+                    Community Connections & Partnerships Text
+                </label>
+                @*@if (IsRTFEmptyAsync(communityRTF).Result)
+                    {
+                        <small class="form-text text-danger float-right">Required Field</small>
+                    }*@
+                <BlazoredTextEditor @ref="@communityRTF" DebugLevel="error" Placeholder="">
+                    <ToolbarContent>
+                        <select class="ql-header">
+                            <option selected=""></option>
+                            <option value="1"></option>
+                            <option value="2"></option>
+                            <option value="3"></option>
+                            <option value="4"></option>
+                            <option value="5"></option>
+                        </select>
+                        <span class="ql-formats">
+                            <button class="ql-bold"></button>
+                            <button class="ql-italic"></button>
+                            <button class="ql-underline"></button>
+                            <button class="ql-strike"></button>
+                        </span>
+
+                    </ToolbarContent>
+                    <EditorContent></EditorContent>
+                </BlazoredTextEditor>
+            </div>
+            <div class="form-group">
+                <label>Community Connections & Partnerships Uploads </label>
+                <div class="custom-file">
+                    <InputFile OnChange="(async (InputFileChangeEventArgs e) => { await UploadToDictionary(CommunityDictionary, e, true); })" class="custom-file-input" id="communityUploads" multiple />
+                    <label class="custom-file-label" for="communityUploads"></label>
+                </div>
+                @if (CommunityDictionary != null && CommunityDictionary.Any())
+                {
+                    <div class="border p-1 mt-1">
+                        @foreach (var p in CommunityDictionary)
+                        {
+                            <div class="d-flex align-items-center">
+                                @if (p.Value.ContentType.ToLower().StartsWith("image"))
+                                {
+                                    <div class="border rounded p-1 m-1" style="width: 100px"><img style="width: 100%" src="@p.Value.ThumbnailBase64" /></div>
+                                }
+                                else
+                                {
+                                    <div class="p-1 m-1" style="width: 100px"></div>
+                                }
+                                @if (p.Value.HasDescription)
+                                {
+                                    <input type="text" @bind="p.Value.Description" class="form-control form-control-sm mr-1" />
+                                }
+                                <button type="button" class="ml-auto btn btn-sm btn-outline-danger mr-1" @onclick="() => { RemoveTempFile(PhotoDictionary, p.Key); }">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <hr />
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    @if (Step == 4)
+    {
+        <div class="p-2 col-8">
+            <div class="form-group">
+                <label>Standards</label>
+                <BlazoredTypeahead SearchMethod="SearchStandard"
+                                   @bind-Values="SelectedStandards"
+                                   EnableDropDown="true"
+                                   ShowDropDownOnFocus="true"
+                                   MinimumLength="0"
+                                   placeholder="type here to search">
+                    <SelectedTemplate Context="t">
+                        @t.Title
+                    </SelectedTemplate>
+                    <HelpTemplate>
+                        Please enter a minimum of 2 characters to perform a search.
+                    </HelpTemplate>
+                    <NotFoundTemplate Context="searchText">
+                        "@searchText" not found
+                    </NotFoundTemplate>
+                    <ResultTemplate Context="t">
+                        @t.Title
+                    </ResultTemplate>
+                </BlazoredTypeahead>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    Formative Assessments
+                </label>
+                @*@if (IsRTFEmptyAsync(formativeRTF).Result)
+                    {
+                        <small class="form-text text-danger float-right">Required Field</small>
+                    }*@
+                <BlazoredTextEditor @ref="@formativeRTF" DebugLevel="error" Placeholder="">
+                    <ToolbarContent>
+                        <select class="ql-header">
+                            <option selected=""></option>
+                            <option value="1"></option>
+                            <option value="2"></option>
+                            <option value="3"></option>
+                            <option value="4"></option>
+                            <option value="5"></option>
+                        </select>
+                        <span class="ql-formats">
+                            <button class="ql-bold"></button>
+                            <button class="ql-italic"></button>
+                            <button class="ql-underline"></button>
+                            <button class="ql-strike"></button>
+                        </span>
+
+                    </ToolbarContent>
+                    <EditorContent></EditorContent>
+                </BlazoredTextEditor>
+            </div>
+            <div class="form-group">
+                <label>Formative Assessments Uploads </label>
+                <div class="custom-file">
+                    <InputFile OnChange="(async (InputFileChangeEventArgs e) => { await UploadToDictionary(FormativeDictionary, e, true); })" class="custom-file-input" id="formativeAssessmentsUploads" multiple />
+                    <label class="custom-file-label" for="formativeAssessmentsUploads"></label>
+                </div>
+
+                @if (FormativeDictionary != null && FormativeDictionary.Any())
+                {
+                    <div class="border p-1 mt-1">
+                        @foreach (var p in FormativeDictionary)
+                        {
+                            <div class="d-flex align-items-center">
+                                @if (p.Value.ContentType.ToLower().StartsWith("image"))
+                                {
+                                    <div class="border rounded p-1 m-1" style="width: 100px"><img style="width: 100%" src="@p.Value.ThumbnailBase64" /></div>
+                                }
+                                else
+                                {
+                                    <div class="p-1 m-1" style="width: 100px"></div>
+                                }
+                                @if (p.Value.HasDescription)
+                                {
+                                    <input type="text" @bind="p.Value.Description" class="form-control form-control-sm mr-1" />
+                                }
+                                <button type="button" class="ml-auto btn btn-sm btn-outline-danger mr-1" @onclick="() => { RemoveTempFile(PhotoDictionary, p.Key); }">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <hr />
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="form-group">
+                <label>
+                    Summative Assessments and Major Milestones
+                </label>
+                @*@if (IsRTFEmptyAsync(summativeRTF).Result)
+                    {
+                        <small class="form-text text-danger float-right">Required Field</small>
+                    }*@
+                <BlazoredTextEditor @ref="@summativeRTF" DebugLevel="error" Placeholder="">
+                    <ToolbarContent>
+                        <select class="ql-header">
+                            <option selected=""></option>
+                            <option value="1"></option>
+                            <option value="2"></option>
+                            <option value="3"></option>
+                            <option value="4"></option>
+                            <option value="5"></option>
+                        </select>
+                        <span class="ql-formats">
+                            <button class="ql-bold"></button>
+                            <button class="ql-italic"></button>
+                            <button class="ql-underline"></button>
+                            <button class="ql-strike"></button>
+                        </span>
+
+                    </ToolbarContent>
+                    <EditorContent></EditorContent>
+                </BlazoredTextEditor>
+            </div>
+            <div class="form-group">
+                <label>Summative Assessments and Major Milestones Uploads </label>
+                <div class="custom-file">
+                    <InputFile OnChange="(async (InputFileChangeEventArgs e) => { await UploadToDictionary(SummativeDictionary, e, true); })" class="custom-file-input" id="summativeUploads" multiple />
+                    <label class="custom-file-label" for="summativeUploads"></label>
+                </div>
+                @if (SummativeDictionary != null && SummativeDictionary.Any())
+                {
+                    <div class="border p-1 mt-1">
+                        @foreach (var p in SummativeDictionary)
+                        {
+                            <div class="d-flex align-items-center">
+                                @if (p.Value.ContentType.ToLower().StartsWith("image"))
+                                {
+                                    <div class="border rounded p-1 m-1" style="width: 100px"><img style="width: 100%" src="@p.Value.ThumbnailBase64" /></div>
+                                }
+                                else
+                                {
+                                    <div class="p-1 m-1" style="width: 100px"></div>
+                                }
+                                @if (p.Value.HasDescription)
+                                {
+                                    <input type="text" @bind="p.Value.Description" class="form-control form-control-sm mr-1" />
+                                }
+                                <button type="button" class="ml-auto btn btn-sm btn-outline-danger mr-1" @onclick="() => { RemoveTempFile(PhotoDictionary, p.Key); }">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <hr />
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="form-group">
+                <label>
+                    Final Product/Performance
+                </label>
+                @*@if (IsRTFEmptyAsync(finalRTF).Result)
+                    {
+                        <small class="form-text text-danger float-right">Required Field</small>
+                    }*@
+                <BlazoredTextEditor @ref="@finalRTF" DebugLevel="error" Placeholder="">
+                    <ToolbarContent>
+                        <select class="ql-header">
+                            <option selected=""></option>
+                            <option value="1"></option>
+                            <option value="2"></option>
+                            <option value="3"></option>
+                            <option value="4"></option>
+                            <option value="5"></option>
+                        </select>
+                        <span class="ql-formats">
+                            <button class="ql-bold"></button>
+                            <button class="ql-italic"></button>
+                            <button class="ql-underline"></button>
+                            <button class="ql-strike"></button>
+                        </span>
+
+                    </ToolbarContent>
+                    <EditorContent></EditorContent>
+                </BlazoredTextEditor>
+            </div>
+        </div>
+    }
+    @if (Step == 5)
+    {
+        <div class="p-2 col-8">
+            <div class="form-group">
+                <label>Pacing Guide </label>
+                <div class="custom-file">
+                    <InputFile OnChange="(async (InputFileChangeEventArgs e) => { await UploadToDictionary(PacingDictionary, e); })" class="custom-file-input" id="pacingGuideUploads" multiple />
+                    <label class="custom-file-label" for="pacingGuideUploads"></label>
+                </div>
+                @if (PacingDictionary != null && PacingDictionary.Any())
+                {
+                    <div class="border p-1 mt-1">
+                        @foreach (var p in PacingDictionary)
+                        {
+                            <div class="d-flex align-items-center">
+                                @if (p.Value.ContentType.ToLower().StartsWith("image"))
+                                {
+                                    <div class="border rounded p-1 m-1" style="width: 100px"><img style="width: 100%" src="@p.Value.ThumbnailBase64" /></div>
+                                }
+                                else
+                                {
+                                    <div class="p-1 m-1" style="width: 100px"></div>
+                                }
+                                @if (p.Value.HasDescription)
+                                {
+                                    <input type="text" @bind="p.Value.Description" class="form-control form-control-sm mr-1" />
+                                }
+                                <button type="button" class="ml-auto btn btn-sm btn-outline-danger mr-1" @onclick="() => { RemoveTempFile(PhotoDictionary, p.Key); }">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <hr />
+                        }
+                    </div>
+                }
+            </div>
+            <div class="form-group">
+                <label>Student Work Examples (Artifacts) </label>
+                <div class="custom-file">
+                    <InputFile OnChange="(async (InputFileChangeEventArgs e) => { await UploadToDictionary(StudentWorkDictionary, e, true); })" class="custom-file-input" id="studentWorkExamplesUploads" multiple />
+                    <label class="custom-file-label" for="studentWorkExamplesUploads"></label>
+                </div>
+                @if (StudentWorkDictionary != null && StudentWorkDictionary.Any())
+                {
+                    <div class="border p-1 mt-1">
+                        @foreach (var p in StudentWorkDictionary)
+                        {
+                            <div class="d-flex align-items-center">
+                                @if (p.Value.ContentType.ToLower().StartsWith("image"))
+                                {
+                                    <div class="border rounded p-1 m-1" style="width: 100px"><img style="width: 100%" src="@p.Value.ThumbnailBase64" /></div>
+                                }
+                                else
+                                {
+                                    <div class="p-1 m-1" style="width: 100px"></div>
+                                }
+                                @if (p.Value.HasDescription)
+                                {
+                                    <input type="text" @bind="p.Value.Description" class="form-control form-control-sm mr-1" />
+                                }
+                                <button type="button" class="ml-auto btn btn-sm btn-outline-danger mr-1" @onclick="() => { RemoveTempFile(PhotoDictionary, p.Key); }">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <hr />
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @if (Step == 6)
+    {
+        <div class="m-4 col-xl-12">
+            <h1>Content Entry Submitted Confirmation</h1>
+            <p>The content you have created has been submitted for approval. </p>
+        </div>
+    }
+
+    @if (Step < 6)
+    {
+
+        <div class="p-2 col-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        Checklist
+                        <button @onclick:preventDefault="true" @onclick="ForceRefreshValidationMessageAsync" class="btn btn-sm btn-info float-right"> Refresh </button>
+                    </h5>
+
+                    <div class="alert alert-info">
+                        @{
+                            var ls = 1;
+                            foreach (var v in ValidationMessages)
+                            {
+                                if (ls != v.Step)
+                                {
+                                    ls = v.Step;
+                                    <div class="mb-4"></div>
+                                }
+                                <div class="mb-1">
+                                    <button @onclick="async () => { await PerformStepAsync(v.Step); }" class="btn btn-sm btn-info">Step @v.Step</button>
+                                    @if (v.Valid)
+                                    {
+                                        <i class="m-2 fas fa-check-circle text-success"></i>
+                                        <small class="text-success">@v.Message</small>
+                                    }
+                                    else
+                                    {
+                                        <i class="m-2 far fa-circle text-danger"></i>
+                                        <small class="text-danger">@v.Message</small>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    }
+
+</div>
+
+<div class="d-flex flex-row bd-highlight mx-4 mb-5">
+    <div class="p-2 bd-highlight">
+
+        <button type="submit" class="btn btn-sm btn-outline-info" disabled="@(Step==1)" @onclick="async()=> { await PerformStepPreviousAsync(); }">Previous</button>
+        <button type="submit" class="btn btn-sm btn-outline-info" disabled="@(Step==5)" @onclick="async()=> { await PerformStepNextAsync(); }">Next</button>
+    </div>
+    <div class="p-2 bd-highlight">
+
+        <button type="submit" disabled="@_isSaving" class="btn btn-sm btn-info" @onclick="SaveForLaterAsync">Save for Later</button>
+        <button type="submit" disabled="@_isSaving" class="btn btn-sm btn-info" @onclick="SubmitForReviewAsync">Submit for Review</button>
+    </div>
+    <div class="p-2 bd-highlight">
+        <button type="submit" disabled="@_isSaving" class="btn btn-sm btn-outline-danger" @onclick="CancelContent">Cancel</button>
+    </div>
+</div>
+
+@if (_showHelp)
+{
+
+    <div class="modal fade show" style="display:block; z-index: 2000;" aria-modal="true" role="dialog">
+        <div class="modal-dialog " @onclick:stopPropagation="true">
+
+            <div class="modal-content">
+                <div class="modal-header">Essential Question</div>
+                <div class="modal-body">
+                    <p>What is the Essential Question that lies at the heart of your unit?</p>
+                    <p>A question is essential when it:</p>
+                    <ol>
+                        <li>
+                            causes genuine and relevant inquiry into the big ideas and core content;
+                        </li>
+                        <li>
+                            provokes deep thought, lively discussion, sustained inquiry, and new understanding as well as more questions;
+                        </li>
+                        <li>
+                            requires students to consider alternatives, weigh evidence, support their ideas, and justify their answers;
+                        </li>
+                        <li>
+                            stimulates vital, on‐going rethinking of big ideas, assumptions, and prior lessons;
+                        </li>
+                        <li>
+                            sparks meaningful connections with prior learning and personal experiences;
+                        </li>
+                        <li>
+                            naturally recurs, creating opportunities for transfer to other situations and subjects.
+                        </li>
+                    </ol>
+                    (from Wiggins “What is an Essential Question:, Authentic Education 2018)
+                    To learn more, see  <a href="https://docs.google.com/document/d/1XurRD28Zjztmg44JrAINB0pUversEZL85rQfds5obJg/edit">Essential Question Primer</a> |
+                    <a href="https://docs.google.com/document/d/1Lt594EJs_vG6npGQ8BArl6hipDAA6Q2jI7-hsUyAhGI/edit">Essential Question readings</a>
+
+                </div>
+
+                <!-- Modal footer -->
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary btn-sm p-1 m-1" type="button" @onclick="@(()=>{ _showHelp=false; })">Close</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="modal-backdrop fade show" style="z-index: 1999;"></div>
+
+
+}

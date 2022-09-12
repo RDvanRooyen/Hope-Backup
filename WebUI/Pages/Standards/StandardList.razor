@@ -1,0 +1,13 @@
+﻿@page "/list/standard"
+@using WebUI.Components
+@using WebUI.Services
+
+<ManagementListPage TItem="Standard"
+                    TService="ServiceBase"
+                    Title="Standard"
+                    IdField="@(x => x.Id)"
+                    NameField="@(x => x.Title)"
+                    ManagePath="standard">                
+                    
+</ManagementListPage>
+

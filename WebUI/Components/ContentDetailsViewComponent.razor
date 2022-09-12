@@ -1,0 +1,397 @@
+﻿@using System
+@using System.IO
+@using Microsoft.AspNetCore.Hosting
+@using Microsoft.Extensions.Logging
+@using Newtonsoft.Json
+@using System.Drawing
+@using WebUI.Components
+@using WebUI.Services
+@using WebUI.Data.Models
+@using WebUI.Factory
+@using WebUI.Data
+@using System.Threading
+@using Blazored.Typeahead
+
+@inject AuthenticationStateProvider _authenticationStateProvider
+@inject ServiceFactory _factory
+@inject IMatToaster _toaster
+@inject IWebHostEnvironment Environment
+@inject System.Net.Http.HttpClient HttpClient
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject NavigationManager NavManager
+
+
+@if (_contentDetails != null)
+{
+
+    <div class="container-fluid">
+        <div class="d-flex flex-row">
+            <div class="p-2 flex-fill">
+                <h1 title="Content Title">@_contentDetails.Title</h1>
+                <p>
+                    <strong>
+                        Rating:
+                    </strong>
+                    <i class="fas fa-star text-info"></i> @_contentDetails.AverageRating.ToDecimalTwoPoint()
+                </p>
+                <p>
+                    <strong>
+                        Summary:
+                    </strong>
+                    <br />
+                    @((MarkupString)_contentDetails.Summary)
+                </p>
+
+                <p>
+                    <strong>
+                        Author:
+                    </strong>
+                    @_contentDetails.CreatedBy?.FirstName @_contentDetails.CreatedBy?.LastName
+
+                </p>
+                <p>
+                    <strong>
+                        Co-author:
+                    </strong>
+                    @{
+                        var coauthors = _contentDetails.CoAuthors.Select(x => $"{x.Author?.FirstName} {x.Author?.LastName}").ToArray();
+                        <span class="mr-1">@string.Join(',', coauthors)</span>
+                    }
+                </p>
+
+                <p>
+                    <strong>
+                        Derivation:
+                    </strong>
+                    <br />
+
+                    @foreach (var d in _contentDetails.Derivations)
+                    {
+                        <a class="d-block" href="content/view/@d.DerivationId">@d.ContentDetails.Title</a>
+                    }
+                    @foreach (var d in _contentDetails.ContentExternalLinks)
+                    {
+                        <a class="d-block" href="@d.ExternalLink">@d.ExternalLink</a>
+                    }
+                </p>
+                <p>
+                    <strong>
+                        Photos:
+                    </strong>
+                </p>
+                <div class="d-flex flex-row bd-highlight mb-3">
+                    @foreach (var photo in _contentDetails.ContentFiles.Where(x => x.Category == ContentFiles.PhotoContentFileCategory))
+                    {
+                    <div class="p-2 bd-highlight">
+                        <img style="height: 100px;"
+                             src="@WebUI.Helpers.ImageTool.ImagePathToBase64(System.IO.Path.Combine(Configuration["AppSettings:BaseDirectory"], photo.RelativePath).Replace(@"\",@"/").ToString())"
+                             alt="@photo.RelativePath" />
+                    </div>
+                    }
+                </div> 
+                
+                <p>
+                    <strong>
+                        Open Education Licensing Addressed:
+                    </strong>
+                    @(_contentDetails.OpenEduLicAdd? "Yes":"No")
+
+                </p>
+                <p>
+                    <strong>
+                        Grade:
+                    </strong>
+                    @{
+                        {
+
+                            var list = _contentDetails.ContentGrades.Select(x => $"{x.Grade?.Title}").ToArray();
+                            <span class="mr-1">@string.Join(',', list)</span>
+                        }
+                    }
+                </p>
+                <p>
+                    <strong>
+                        Subject:
+                    </strong>
+                </p>
+                <p>
+                    <strong>
+                        Topics:
+                    </strong>
+                    @{
+                        {
+
+                            var list = _contentDetails.ContentTopics.Select(x => $"{x.Topic?.Title}").ToArray();
+                            <span class="mr-1">@string.Join(',', list)</span>
+                        }
+                    }
+                </p>
+                <p>
+                    <strong>
+                        Essential Question:
+                    </strong>
+                    <br />
+                    @((MarkupString)_contentDetails.EssentialQuestion)
+                </p>
+                <p>
+                    <strong>
+                        Purpose/Objective
+                    </strong>
+                    <br />
+                    @((MarkupString)_contentDetails.Objective)
+                </p>
+                <p>
+                    <strong>
+                        Connection to Hawaii:
+                    </strong>
+                    @_contentDetails.ConnectionToHawaii
+                </p>
+                <p>
+                    <strong>
+                        Place Name:
+                    </strong>
+                    @_contentDetails.PlaceName
+                </p>
+                <p>
+                    <strong>
+                        Duration:
+                    </strong>
+                    @(_contentDetails.Duration)
+                </p>
+
+
+                <p>
+                    <strong>
+                        Materials:
+                    </strong>
+                    <br />
+                    @((MarkupString)_contentDetails.MaterialsText)
+                    <br />
+                    @foreach (var f in _contentDetails.ContentFiles.Where(x => x.Category == ContentFiles.MaterialContentFileCategory))
+                    {
+                        <a class="d-block" href="@(GetDownloadLink(Configuration["AppSettings:BaseDirectory"],f.RelativePath))">@f.FilenameFromPath</a>
+                    }
+                </p>
+
+                <p>
+                    <strong>
+                        Resources:
+                    </strong>
+                    <br />
+                    @((MarkupString)_contentDetails.ResourcesText)
+                    <br />
+                    @foreach (var f in _contentDetails.ContentFiles.Where(x => x.Category == ContentFiles.ResourceContentFileCategory))
+                    {
+                        <a class="d-block" href="@(GetDownloadLink(Configuration["AppSettings:BaseDirectory"],f.RelativePath))">@f.FilenameFromPath</a>
+                    }
+                </p>
+
+                <p>
+                    <strong>
+                        Community Connections & Partnerships:
+                    </strong>
+                    <br />
+                    @((MarkupString)_contentDetails.ConnectionText)
+                    <br />
+                    @foreach (var f in _contentDetails.ContentFiles.Where(x => x.Category == ContentFiles.CommunityContentFileCategory))
+                    {
+                        <a class="d-block" href="@(GetDownloadLink(Configuration["AppSettings:BaseDirectory"],f.RelativePath))">@f.FilenameFromPath</a>
+                    }
+                </p>
+                <p>
+                    <strong>
+                        Standards:
+                    </strong>
+                    @{
+                        {
+
+                            var list = _contentDetails.ContentStandards.Select(x => $"{x.Standard?.Title}").ToArray();
+                            <span class="mr-1">@string.Join(',', list)</span>
+                        }
+                    }
+                </p>
+
+                <p>
+                    <strong>
+                        Formative Assessments:
+                    </strong>
+                    <br />
+                    @((MarkupString)_contentDetails.FormativeAssessments)
+                    <br />
+                    @foreach (var f in _contentDetails.ContentFiles.Where(x => x.Category == ContentFiles.FormativeContentFileCategory))
+                    {
+                        <a class="d-block" href="@(GetDownloadLink(Configuration["AppSettings:BaseDirectory"],f.RelativePath))">@f.FilenameFromPath</a>
+                    }
+                </p>
+                <p>
+                    <strong>
+                        Summative Assessments and Major Milestones:
+                    </strong>
+                    <br />
+                    @((MarkupString)_contentDetails.SummativeAssessments)
+                    <br />
+                    @foreach (var f in _contentDetails.ContentFiles.Where(x => x.Category == ContentFiles.SummativeContentFileCategory))
+                    {
+                        <a class="d-block" href="@(GetDownloadLink(Configuration["AppSettings:BaseDirectory"],f.RelativePath))">@f.FilenameFromPath</a>
+                    }
+                </p>
+
+                <p>
+                    <strong>
+                        Final Product/Performance:
+                    </strong>
+                    <br />
+                    @((MarkupString)_contentDetails.FinalProduct)
+                </p>
+
+                <p>
+                    <strong>
+                        Pacing Guide:
+                    </strong>
+                    <br />
+                    <br />
+                    @foreach (var f in _contentDetails.ContentFiles.Where(x => x.Category == ContentFiles.PacingContentFileCategory))
+                    {
+                        <a class="d-block" href="@(GetDownloadLink(Configuration["AppSettings:BaseDirectory"],f.RelativePath))">@f.FilenameFromPath</a>
+                    }
+                </p>
+
+                <p>
+                    <strong>
+                        Student Work Examples (Artifacts):
+                    </strong>
+                    <br />
+                    <br />
+                    @foreach (var f in _contentDetails.ContentFiles.Where(x => x.Category == ContentFiles.StudentWorkContentFileCategory))
+                    {
+                        <a class="d-block" href="@(GetDownloadLink(Configuration["AppSettings:BaseDirectory"],f.RelativePath))">@f.FilenameFromPath</a>
+                    }
+                </p>
+
+            </div>
+            @if(!HideSideBar){
+            <div class="p-2">
+                <div style="width: 500px;">
+                    <AuthorizeView>
+                        <Authorized>
+                            <div class="d-flex flex-row">
+                                <div class="p-2">
+                                    Rate this Content
+                                </div>
+                                <div class="p-2 text-info">
+                                    @for (var i = 1; i <= 5; i++)
+                                    {
+                                        var r = i;
+                                        <span class="@(_givenRating>=r?"lock":"unlock")" @onclick="()=> { RateThis(r); }">
+                                            <i class="fas fa-star"></i>
+                                            <i class="far fa-star"></i>
+                                        </span>
+                                    }
+
+                                </div>
+                                <div class="ml-auto p-2">
+                                    <button type="submit" class="btn @(_isBookmarked?"btn-info":"btn-outline-info") btn-sm" @onclick="ToggleBookmark">
+                                        @if (_isBookmarked)
+                                        {
+                                            <i class="fas fa-bookmark" title="click to remove from bookmark list"></i>
+                                            <span>
+                                                Bookmarked
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <i class="far fa-bookmark" title="click to add to bookmark list"></i>
+                                            <span>Bookmark this content</span>
+                                        }
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="border p-2">
+                                <div class="form-group">
+                                    <textarea class="form-control" rows="3" placeholder="Ask the author a question" @bind="_newQuestion"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-outline-info btn-sm" @onclick="AddQuestion">Submit</button>
+                                <hr />
+                                <div class="form-group">
+                                    <strong for="">Create a derivation of this content</strong>
+                                    <p>
+
+                                    </p>
+                                </div>
+                                <button type="submit" class="btn btn-outline-info btn-sm" @onclick="CreateDerivation">Create Derivation</button>
+                                <hr />
+                                <div class="form-group">
+                                    <strong for="">Comments</strong>
+                                    <div class="form-group">
+                                        <textarea class="form-control" rows="3" placeholder="" @bind="_newComment"></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-outline-info btn-sm" @onclick="AddComment">Add Comment</button>
+                                    <small>Note: Moderator will approve or reject your comment. Only approved comments will be shown here.</small>
+                                </div>
+                            </div>
+                        </Authorized>
+                        <NotAuthorized>
+
+                            <div class="d-flex flex-row">
+                                <div class="p-2">
+                                    Rating
+                                </div>
+                                <div class="p-2 text-info">
+
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="far fa-star"></i>
+                                    <i class="far fa-star"></i>
+
+
+                                </div>
+                            </div>
+                            <div class="border p-2">
+                                <div class="form-group">
+                                    <textarea class="form-control" rows="3" placeholder="Please login to ask a question" disabled></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-outline-info btn-sm" disabled>Submit</button>
+                                <hr />
+                                <div class="form-group">
+                                    <strong for="">Create a derivation of this content</strong>
+                                    <p>
+
+                                    </p>
+                                </div>
+                                <button type="submit" class="btn btn-outline-info btn-sm" disabled>Create Derivation</button>
+                                <hr />
+                                <div class="form-group">
+                                    <strong for="">Comments</strong>
+                                    <div class="form-group">
+                                        <textarea class="form-control" rows="3" placeholder="Please login to add comment" disabled></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-outline-info btn-sm" disabled>Add Comment</button>
+                                </div>
+                            </div>
+                        </NotAuthorized>
+                    </AuthorizeView>
+
+                    @if (_topComments != null && _topComments.Any())
+                    {
+
+                        <div class="border p-2" style="font-size: 0.9em;">
+                            @foreach (var c in _topComments)
+                            {
+
+                                <div class="d-block mb-2">
+                                    <strong>@c.Added.ToHumanDateTime()</strong>
+                                    <strong>@c.User.FullName</strong>
+                                    <br />
+                                    <span>@c.Comment</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+            }
+        </div>
+    </div>
+}

@@ -1,0 +1,41 @@
+﻿@using Microsoft.AspNetCore.Components.Web
+
+@if(this.show){
+<div class="dropdown-overlay" @onclick="e => this.show=false" ></div>
+}
+<div class="dropdown dropdown-with-overlay">
+    <button class="text-dark btn dropdown-toggle @TipClass" data-toggle="dropdown" type="button" @onclick="e => this.show=!this.show " 
+            aria-haspopup="true" aria-expanded="false">
+            @Tip
+    </button>
+    <CascadingValue name="Dropdown" Value="@this">
+    <div class="dropdown-menu dropdown-menu-right @(show? "show":"")" >
+        @ChildContent
+    </div>
+    </CascadingValue> 
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment InitialTip{get;set;}
+    [Parameter]
+    public RenderFragment ChildContent{get;set;}
+    [Parameter]
+    public EventCallback<string> OnSelected {get;set;}
+
+    [Parameter]
+    public string TipClass { get; set; }
+
+    private bool show = false;
+    private RenderFragment Tip ;
+
+    protected override void OnInitialized(){ this.Tip = InitialTip; }
+
+    public async Task HandleSelect(string item, RenderFragment<string> contentFragment)
+    {
+        //this.Tip= contentFragment.Invoke(item);
+        this.show=false;
+        StateHasChanged();
+        //await this.OnSelected.InvokeAsync(item);
+    }
+}
